@@ -1,5 +1,7 @@
 package box2d
 
+import "math"
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -101,6 +103,52 @@ func NewB2DistanceOutput() *B2DistanceOutput {
 	return &res
 }
 
+/// Input parameters for b2ShapeCast
+type B2ShapeCastInput struct {
+	ProxyA       B2DistanceProxy
+	ProxyB       B2DistanceProxy
+	TransformA   B2Transform
+	TransformB   B2Transform
+	TranslationB B2Vec2
+}
+
+func MakeB2ShapeCastInput() B2ShapeCastInput {
+	return B2ShapeCastInput{
+		ProxyA:       MakeB2DistanceProxy(),
+		ProxyB:       MakeB2DistanceProxy(),
+		TransformA:   MakeB2Transform(),
+		TransformB:   MakeB2Transform(),
+		TranslationB: MakeB2Vec2(0, 0),
+	}
+}
+
+func NewB2ShapeCastInput() *B2ShapeCastInput {
+	res := MakeB2ShapeCastInput()
+	return &res
+}
+
+/// Output results for b2ShapeCast
+type B2ShapeCastOutput struct {
+	Point      B2Vec2
+	Normal     B2Vec2
+	Lambda     float64
+	Iterations int
+}
+
+func MakeB2ShapeCastOutput() B2ShapeCastOutput {
+	return B2ShapeCastOutput{
+		Point:      MakeB2Vec2(0, 0),
+		Normal:     MakeB2Vec2(0, 0),
+		Lambda:     0.0,
+		Iterations: 0,
+	}
+}
+
+func NewB2ShapeCastOutput() *B2ShapeCastOutput {
+	res := MakeB2ShapeCastOutput()
+	return &res
+}
+
 // //////////////////////////////////////////////////////////////////////////
 
 func (p B2DistanceProxy) GetVertexCount() int {
@@ -152,6 +200,8 @@ func (p B2DistanceProxy) GetSupportVertex(d B2Vec2) B2Vec2 {
 // GJK using Voronoi regions (Christer Ericson) and Barycentric coordinates.
 var b2_gjkCalls, b2_gjkIters, b2_gjkMaxIters int
 
+/// Initialize the proxy using the given shape. The shape
+/// must remain in scope while the proxy is in use.
 func (p *B2DistanceProxy) Set(shape B2ShapeInterface, index int) {
 	switch shape.GetType() {
 	case B2Shape_Type.E_circle:
@@ -705,4 +755,142 @@ func B2Distance(output *B2DistanceOutput, cache *B2SimplexCache, input *B2Distan
 			output.Distance = 0.0
 		}
 	}
+}
+
+// GJK-raycast
+// Algorithm by Gino van den Bergen.
+// "Smooth Mesh Contacts with GJK" in Game Physics Pearls. 2010
+//
+// Perform a linear shape cast of shape B moving and shape A fixed. Determines the hit point, normal, and translation fraction.
+func B2ShapeCast(output *B2ShapeCastOutput, input *B2ShapeCastInput) bool {
+	output.Iterations = 0
+	output.Lambda = 1.0
+	output.Normal.SetZero()
+	output.Point.SetZero()
+
+	proxyA := &input.ProxyA
+	proxyB := &input.ProxyB
+
+	radiusA := math.Max(proxyA.M_radius, B2_polygonRadius)
+	radiusB := math.Max(proxyB.M_radius, B2_polygonRadius)
+	radius := radiusA + radiusB
+
+	xfA := input.TransformA
+	xfB := input.TransformB
+
+	r := input.TranslationB
+	n := MakeB2Vec2(0, 0)
+	var lambda float64 = 0.0
+
+	// Initial simplex
+	simplex := MakeB2Simplex()
+	simplex.M_count = 0
+
+	// Get simplex vertices as an array.
+	vertices := &simplex.M_vs
+	//b2SimplexVertex* vertices = &simplex.m_v1;
+
+	// Get support point in -r direction
+	indexA := proxyA.GetSupport(B2RotVec2MulT(xfA.Q, r.OperatorNegate()))
+	wA := B2TransformVec2Mul(xfA, proxyA.GetVertex(indexA))
+	indexB := proxyB.GetSupport(B2RotVec2MulT(xfB.Q, r))
+	wB := B2TransformVec2Mul(xfB, proxyB.GetVertex(indexB))
+	v := B2Vec2Sub(wA, wB)
+
+	// Sigma is the target distance between polygons
+	sigma := math.Max(B2_polygonRadius, radius-B2_polygonRadius)
+	var tolerance float64 = 0.5 * B2_linearSlop
+
+	// Main iteration loop.
+	k_maxIters := 20
+	iter := 0
+	for iter < k_maxIters && math.Abs(v.Length()-sigma) > tolerance {
+		B2Assert(simplex.M_count < 3)
+
+		output.Iterations += 1
+
+		// Support in direction -v (A - B)
+		indexA = proxyA.GetSupport(B2RotVec2MulT(xfA.Q, v.OperatorNegate()))
+		wA = B2TransformVec2Mul(xfA, proxyA.GetVertex(indexA))
+		indexB = proxyB.GetSupport(B2RotVec2MulT(xfB.Q, v))
+		wB = B2TransformVec2Mul(xfB, proxyB.GetVertex(indexB))
+		p := B2Vec2Sub(wA, wB)
+
+		// -v is a normal at p
+		v.Normalize()
+
+		// Intersect ray with plane
+		vp := B2Vec2Dot(v, p)
+		vr := B2Vec2Dot(v, r)
+		if vp-sigma > lambda*vr {
+			if vr <= 0.0 {
+				return false
+			}
+
+			lambda = (vp - sigma) / vr
+			if lambda > 1.0 {
+				return false
+			}
+
+			n = v.OperatorNegate()
+			simplex.M_count = 0
+		}
+
+		// Reverse simplex since it works with B - A.
+		// Shift by lambda * r because we want the closest point to the current clip point.
+		// Note that the support point p is not shifted because we want the plane equation
+		// to be formed in unshifted space.
+		vertex := &vertices[simplex.M_count]
+		vertex.IndexA = indexB
+		vertex.WA = B2Vec2Add(wB, B2Vec2MulScalar(lambda, r))
+		vertex.IndexB = indexA
+		vertex.WB = wA
+		vertex.W = B2Vec2Sub(vertex.WB, vertex.WA)
+		vertex.A = 1.0
+		simplex.M_count += 1
+
+		switch simplex.M_count {
+		case 1:
+			break
+
+		case 2:
+			simplex.Solve2()
+			break
+
+		case 3:
+			simplex.Solve3()
+			break
+
+		default:
+			B2Assert(false)
+		}
+
+		// If we have 3 points, then the origin is in the corresponding triangle.
+		if simplex.M_count == 3 {
+			// Overlap
+			return false
+		}
+
+		// Get search direction.
+		v = simplex.GetClosestPoint()
+
+		// Iteration count is equated to the number of support point calls.
+		iter++
+	}
+
+	// Prepare output.
+	pointA := MakeB2Vec2(0, 0)
+	pointB := MakeB2Vec2(0, 0)
+	simplex.GetWitnessPoints(&pointB, &pointA)
+
+	if v.LengthSquared() > 0.0 {
+		n = v.OperatorNegate()
+		n.Normalize()
+	}
+
+	output.Point = B2Vec2Add(pointA, B2Vec2MulScalar(radiusA, n))
+	output.Normal = n
+	output.Lambda = lambda
+	output.Iterations = iter
+	return true
 }
