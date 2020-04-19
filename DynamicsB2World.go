@@ -912,18 +912,18 @@ func (world *B2World) Step(dt float64, velocityIterations int, positionIteration
 
 	step.WarmStarting = world.M_warmStarting
 
-	// Update contacts. This is where some contacts are destroyed.
-	{
-		timer := MakeB2Timer()
-		world.M_contactManager.Collide()
-		world.M_profile.Collide = timer.GetMilliseconds()
-	}
-
 	// Integrate velocities, solve velocity constraints, and integrate positions.
 	if world.M_stepComplete && step.Dt > 0.0 {
 		timer := MakeB2Timer()
 		world.Solve(step)
 		world.M_profile.Solve = timer.GetMilliseconds()
+	}
+
+	// Update contacts. This is where some contacts are destroyed.
+	{
+		timer := MakeB2Timer()
+		world.M_contactManager.Collide()
+		world.M_profile.Collide = timer.GetMilliseconds()
 	}
 
 	// Handle TOI events.
