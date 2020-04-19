@@ -891,6 +891,7 @@ func (body *B2Body) SetActive(flag bool) {
 		}
 
 		// Contacts are created the next time step.
+		body.M_world.M_flags |= B2World_Flags.E_newFixture
 	} else {
 		body.M_flags &= ^B2Body_Flags.E_activeFlag
 
