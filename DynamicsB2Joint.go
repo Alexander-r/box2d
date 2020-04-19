@@ -383,8 +383,9 @@ func MakeB2Joint(def B2JointDefInterface) *B2Joint { // def has to be backed by 
 	return &res
 }
 
-func (j B2Joint) IsActive() bool {
-	return j.M_bodyA.IsActive() && j.M_bodyB.IsActive()
+/// Short-cut function to determine if either body is enabled.
+func (j B2Joint) IsEnabled() bool {
+	return j.M_bodyA.IsEnabled() && j.M_bodyB.IsEnabled()
 }
 
 //@goadd
@@ -454,7 +455,7 @@ type B2JointInterface interface {
 	IsCollideConnected() bool
 	SetCollideConnected(flag bool)
 
-	IsActive() bool
+	IsEnabled() bool
 
 	//@goadd
 	Destroy()

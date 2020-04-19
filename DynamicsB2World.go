@@ -5,26 +5,10 @@ import (
 	"math"
 )
 
-/// The world class manages all physics entities, dynamic simulation,
-/// and asynchronous queries. The world also contains efficient memory
-/// management facilities.
-
-var B2World_Flags = struct {
-	E_newFixture  int
-	E_locked      int
-	E_clearForces int
-}{
-	E_newFixture:  0x0001,
-	E_locked:      0x0002,
-	E_clearForces: 0x0004,
-}
-
 // /// The world class manages all physics entities, dynamic simulation,
 // /// and asynchronous queries. The world also contains efficient memory
 // /// management facilities.
 type B2World struct {
-	M_flags int
-
 	M_contactManager B2ContactManager
 
 	M_bodyList  *B2Body          // linked list
@@ -42,6 +26,10 @@ type B2World struct {
 	// This is used to compute the time step ratio to
 	// support a variable time step.
 	M_inv_dt0 float64
+
+	M_newContacts bool
+	M_locked      bool
+	M_clearForces bool
 
 	// These are for debugging the solver.
 	M_warmStarting      bool
@@ -86,20 +74,16 @@ func (world B2World) GetGravity() B2Vec2 {
 }
 
 func (world B2World) IsLocked() bool {
-	return (world.M_flags & B2World_Flags.E_locked) == B2World_Flags.E_locked
+	return world.M_locked
 }
 
 func (world *B2World) SetAutoClearForces(flag bool) {
-	if flag {
-		world.M_flags |= B2World_Flags.E_clearForces
-	} else {
-		world.M_flags &= ^B2World_Flags.E_clearForces
-	}
+	world.M_clearForces = flag
 }
 
 /// Get the flag that controls automatic clearing of forces after each time step.
 func (world B2World) GetAutoClearForces() bool {
-	return (world.M_flags & B2World_Flags.E_clearForces) == B2World_Flags.E_clearForces
+	return world.M_clearForces
 }
 
 func (world B2World) GetContactManager() B2ContactManager {
@@ -140,7 +124,9 @@ func MakeB2World(gravity B2Vec2) B2World {
 	world.M_allowSleep = true
 	world.M_gravity = gravity
 
-	world.M_flags = B2World_Flags.E_clearForces
+	world.M_newContacts = false
+	world.M_locked = false
+	world.M_clearForces = true
 
 	world.M_inv_dt0 = 0.0
 
@@ -463,7 +449,7 @@ func (world *B2World) Solve(step B2TimeStep) {
 			continue
 		}
 
-		if seed.IsAwake() == false || seed.IsActive() == false {
+		if seed.IsAwake() == false || seed.IsEnabled() == false {
 			continue
 		}
 
@@ -484,7 +470,7 @@ func (world *B2World) Solve(step B2TimeStep) {
 			// Grab the next body off the stack and add it to the island.
 			stackCount--
 			b := stack[stackCount]
-			B2Assert(b.IsActive() == true)
+			B2Assert(b.IsEnabled() == true)
 			island.AddBody(b)
 
 			// Make sure the body is awake (without resetting sleep timer).
@@ -543,8 +529,8 @@ func (world *B2World) Solve(step B2TimeStep) {
 
 				other := je.Other
 
-				// Don't simulate joints connected to inactive bodies.
-				if other.IsActive() == false {
+				// Don't simulate joints connected to disabled bodies.
+				if other.IsEnabled() == false {
 					continue
 				}
 
@@ -891,12 +877,12 @@ func (world *B2World) Step(dt float64, velocityIterations int, positionIteration
 	stepTimer := MakeB2Timer()
 
 	// If new fixtures were added, we need to find the new contacts.
-	if (world.M_flags & B2World_Flags.E_newFixture) != 0x0000 {
+	if world.M_newContacts {
 		world.M_contactManager.FindNewContacts()
-		world.M_flags &= ^B2World_Flags.E_newFixture
+		world.M_newContacts = false
 	}
 
-	world.M_flags |= B2World_Flags.E_locked
+	world.M_locked = true
 
 	step := MakeB2TimeStep()
 	step.Dt = dt
@@ -937,11 +923,11 @@ func (world *B2World) Step(dt float64, velocityIterations int, positionIteration
 		world.M_inv_dt0 = step.Inv_dt
 	}
 
-	if (world.M_flags & B2World_Flags.E_clearForces) != 0x0000 {
+	if world.M_clearForces {
 		world.ClearForces()
 	}
 
-	world.M_flags &= ^B2World_Flags.E_locked
+	world.M_locked = false
 
 	world.M_profile.Step = stepTimer.GetMilliseconds()
 }
@@ -1140,7 +1126,7 @@ func (world *B2World) RayCast(callback B2RaycastCallback, point1 B2Vec2, point2 
 // 			const b2Transform& xf = b.GetTransform();
 // 			for (b2Fixture* f = b.GetFixtureList(); f; f = f.GetNext())
 // 			{
-// 				if (b.IsActive() == false)
+// 				if (b.IsEnabled() == false)
 // 				{
 // 					DrawShape(f, xf, b2Color(0.5f, 0.5f, 0.3f));
 // 				}
@@ -1194,7 +1180,7 @@ func (world *B2World) RayCast(callback B2RaycastCallback, point1 B2Vec2, point2 
 
 // 		for (b2Body* b = m_bodyList; b; b = b.GetNext())
 // 		{
-// 			if (b.IsActive() == false)
+// 			if (b.IsEnabled() == false)
 // 			{
 // 				continue;
 // 			}
@@ -1246,8 +1232,8 @@ func (world B2World) GetTreeQuality() float64 {
 
 func (world *B2World) ShiftOrigin(newOrigin B2Vec2) {
 
-	B2Assert((world.M_flags & B2World_Flags.E_locked) == 0)
-	if (world.M_flags & B2World_Flags.E_locked) == B2World_Flags.E_locked {
+	B2Assert(world.M_locked == false)
+	if world.M_locked {
 		return
 	}
 
@@ -1265,7 +1251,7 @@ func (world *B2World) ShiftOrigin(newOrigin B2Vec2) {
 }
 
 func (world *B2World) Dump() {
-	if (world.M_flags & B2World_Flags.E_locked) == B2World_Flags.E_locked {
+	if world.M_locked {
 		return
 	}
 

@@ -68,8 +68,8 @@ type B2BodyDef struct {
 	/// @warning You should use this flag sparingly since it increases processing time.
 	Bullet bool
 
-	/// Does this body start out active?
-	Active bool
+	/// Does this body start out enabled?
+	Enabled bool
 
 	/// Use this to store application specific body data.
 	UserData interface{}
@@ -93,7 +93,7 @@ func MakeB2BodyDef() B2BodyDef {
 		FixedRotation:   false,
 		Bullet:          false,
 		Type:            B2BodyType.B2_staticBody,
-		Active:          true,
+		Enabled:         true,
 		GravityScale:    1.0,
 	}
 }
@@ -109,7 +109,7 @@ var B2Body_Flags = struct {
 	E_autoSleepFlag     uint32
 	E_bulletFlag        uint32
 	E_fixedRotationFlag uint32
-	E_activeFlag        uint32
+	E_enabledFlag       uint32
 	E_toiFlag           uint32
 }{
 	E_islandFlag:        0x0001,
@@ -117,7 +117,7 @@ var B2Body_Flags = struct {
 	E_autoSleepFlag:     0x0004,
 	E_bulletFlag:        0x0008,
 	E_fixedRotationFlag: 0x0010,
-	E_activeFlag:        0x0020,
+	E_enabledFlag:       0x0020,
 	E_toiFlag:           0x0040,
 }
 
@@ -309,8 +309,8 @@ func (body B2Body) IsAwake() bool {
 	return (body.M_flags & B2Body_Flags.E_awakeFlag) == B2Body_Flags.E_awakeFlag
 }
 
-func (body B2Body) IsActive() bool {
-	return (body.M_flags & B2Body_Flags.E_activeFlag) == B2Body_Flags.E_activeFlag
+func (body B2Body) IsEnabled() bool {
+	return (body.M_flags & B2Body_Flags.E_enabledFlag) == B2Body_Flags.E_enabledFlag
 }
 
 func (body B2Body) IsFixedRotation() bool {
@@ -506,8 +506,8 @@ func NewB2Body(bd *B2BodyDef, world *B2World) *B2Body {
 		body.M_flags |= B2Body_Flags.E_awakeFlag
 	}
 
-	if bd.Active {
-		body.M_flags |= B2Body_Flags.E_activeFlag
+	if bd.Enabled {
+		body.M_flags |= B2Body_Flags.E_enabledFlag
 	}
 
 	body.M_world = world
@@ -618,7 +618,7 @@ func (body *B2Body) CreateFixtureFromDef(def *B2FixtureDef) *B2Fixture {
 	fixture := NewB2Fixture()
 	fixture.Create(body, def)
 
-	if (body.M_flags & B2Body_Flags.E_activeFlag) != 0x0000 {
+	if (body.M_flags & B2Body_Flags.E_enabledFlag) != 0x0000 {
 		broadPhase := &body.M_world.M_contactManager.M_broadPhase
 		fixture.CreateProxies(broadPhase, body.M_xf)
 	}
@@ -636,7 +636,7 @@ func (body *B2Body) CreateFixtureFromDef(def *B2FixtureDef) *B2Fixture {
 
 	// Let the world know we have a new fixture. This will cause new contacts
 	// to be created at the beginning of the next time step.
-	body.M_world.M_flags |= B2World_Flags.E_newFixture
+	body.M_world.M_newContacts = true
 
 	return fixture
 }
@@ -696,7 +696,7 @@ func (body *B2Body) DestroyFixture(fixture *B2Fixture) {
 		}
 	}
 
-	if (body.M_flags & B2Body_Flags.E_activeFlag) != 0x0000 {
+	if (body.M_flags & B2Body_Flags.E_enabledFlag) != 0x0000 {
 		broadPhase := &body.M_world.M_contactManager.M_broadPhase
 		fixture.DestroyProxies(broadPhase)
 	}
@@ -874,15 +874,14 @@ func (body *B2Body) SynchronizeFixtures() {
 }
 
 func (body *B2Body) SetActive(flag bool) {
-
 	B2Assert(body.M_world.IsLocked() == false)
 
-	if flag == body.IsActive() {
+	if flag == body.IsEnabled() {
 		return
 	}
 
 	if flag {
-		body.M_flags |= B2Body_Flags.E_activeFlag
+		body.M_flags |= B2Body_Flags.E_enabledFlag
 
 		// Create all proxies.
 		broadPhase := &body.M_world.M_contactManager.M_broadPhase
@@ -890,10 +889,10 @@ func (body *B2Body) SetActive(flag bool) {
 			f.CreateProxies(broadPhase, body.M_xf)
 		}
 
-		// Contacts are created the next time step.
-		body.M_world.M_flags |= B2World_Flags.E_newFixture
+		// Contacts are created at the beginning of the next
+		body.M_world.M_newContacts = true
 	} else {
-		body.M_flags &= ^B2Body_Flags.E_activeFlag
+		body.M_flags &= ^B2Body_Flags.E_enabledFlag
 
 		// Destroy all proxies.
 		broadPhase := &body.M_world.M_contactManager.M_broadPhase
@@ -947,7 +946,7 @@ func (body *B2Body) Dump() {
 	fmt.Print(fmt.Printf("  bd.awake = bool(%d);\n", body.M_flags&B2Body_Flags.E_awakeFlag))
 	fmt.Print(fmt.Printf("  bd.fixedRotation = bool(%d);\n", body.M_flags&B2Body_Flags.E_fixedRotationFlag))
 	fmt.Print(fmt.Printf("  bd.bullet = bool(%d);\n", body.M_flags&B2Body_Flags.E_bulletFlag))
-	fmt.Print(fmt.Printf("  bd.active = bool(%d);\n", body.M_flags&B2Body_Flags.E_activeFlag))
+	fmt.Print(fmt.Printf("  bd.active = bool(%d);\n", body.M_flags&B2Body_Flags.E_enabledFlag))
 	fmt.Print(fmt.Printf("  bd.gravityScale = %.15f;\n", body.M_gravityScale))
 	fmt.Print(fmt.Printf("  bodies[%d] = body.M_world.CreateBody(&bd);\n", body.M_islandIndex))
 	fmt.Print("\n")
