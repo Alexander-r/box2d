@@ -2,7 +2,7 @@ package box2d_test
 
 import (
 	"fmt"
-	"github.com/ByteArena/box2d"
+	"github.com/Alexander-r/box2d.go"
 	"github.com/pmezard/go-difflib/difflib"
 	"testing"
 )
