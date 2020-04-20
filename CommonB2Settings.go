@@ -87,7 +87,7 @@ const B2_maxRotationSquared = (B2_maxRotation * B2_maxRotation)
 /// that overlap is removed in one time step. However using values close to 1 often lead
 /// to overshoot.
 const B2_baumgarte = 0.2
-const B2_toiBaugarte = 0.75
+const B2_toiBaumgarte = 0.75
 
 // Sleep
 
