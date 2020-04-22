@@ -213,6 +213,8 @@ func (joint *B2DistanceJoint) InitVelocityConstraints(data B2SolverData) {
 
 		// magic formulas
 		h := data.Step.Dt
+
+		// gamma = 1 / (h * (d + h * k)), the extra factor of h in the denominator is since the lambda is an impulse, not a force
 		joint.M_gamma = h * (d + h*k)
 		if joint.M_gamma != 0.0 {
 			joint.M_gamma = 1.0 / joint.M_gamma
