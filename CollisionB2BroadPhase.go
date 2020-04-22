@@ -1,9 +1,5 @@
 package box2d
 
-import (
-	"sort"
-)
-
 type B2BroadPhaseAddPairCallback func(userDataA interface{}, userDataB interface{})
 
 type B2Pair struct {
@@ -29,22 +25,19 @@ type B2BroadPhase struct {
 	M_queryProxyId int
 }
 
+//Was used for sorting the pair buffer to expose duplicates:
+//sort.Sort(PairByLessThan(bp.M_pairBuffer[:bp.M_pairCount]))
 type PairByLessThan []B2Pair
 
 func (a PairByLessThan) Len() int      { return len(a) }
 func (a PairByLessThan) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a PairByLessThan) Less(i, j int) bool {
-	return B2PairLessThan(a[i], a[j])
-}
-
-/// This is used to sort pairs.
-func B2PairLessThan(pair1 B2Pair, pair2 B2Pair) bool {
-	if pair1.ProxyIdA < pair2.ProxyIdA {
+	if a[i].ProxyIdA < a[j].ProxyIdA {
 		return true
 	}
 
-	if pair1.ProxyIdA == pair2.ProxyIdA {
-		return pair1.ProxyIdB < pair2.ProxyIdB
+	if a[i].ProxyIdA == a[j].ProxyIdA {
+		return a[i].ProxyIdB < a[j].ProxyIdB
 	}
 
 	return false
@@ -100,34 +93,26 @@ func (bp *B2BroadPhase) UpdatePairs(addPairCallback B2BroadPhaseAddPairCallback)
 		bp.M_tree.Query(bp.QueryCallback, fatAABB)
 	}
 
-	// Reset move buffer
-	bp.M_moveCount = 0
-
-	// Sort the pair buffer to expose duplicates.
-	sort.Sort(PairByLessThan(bp.M_pairBuffer[:bp.M_pairCount]))
-
-	// Send the pairs back to the client.
-	i := 0
-	for i < bp.M_pairCount {
+	// Send pairs to caller
+	for i := 0; i < bp.M_pairCount; i++ {
 		primaryPair := bp.M_pairBuffer[i]
 		userDataA := bp.M_tree.GetUserData(primaryPair.ProxyIdA)
 		userDataB := bp.M_tree.GetUserData(primaryPair.ProxyIdB)
 
 		addPairCallback(userDataA, userDataB)
-		i++
-
-		// Skip any duplicate pairs.
-		for i < bp.M_pairCount {
-			pair := bp.M_pairBuffer[i]
-			if pair.ProxyIdA != primaryPair.ProxyIdA || pair.ProxyIdB != primaryPair.ProxyIdB {
-				break
-			}
-			i++
-		}
 	}
 
-	// // Try to keep the tree balanced.
-	// //m_tree.Rebalance(4);
+	// Clear move flags
+	for i := 0; i < bp.M_moveCount; i++ {
+		proxyId := bp.M_moveBuffer[i]
+		if proxyId == E_nullProxy {
+			continue
+		}
+		bp.M_tree.ClearMoved(proxyId)
+	}
+
+	// Reset move buffer
+	bp.M_moveCount = 0
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -209,10 +194,16 @@ func (bp *B2BroadPhase) QueryCallback(proxyId int) bool {
 		return true
 	}
 
+	moved := bp.M_tree.WasMoved(proxyId)
+	if moved && proxyId > bp.M_queryProxyId {
+		// Both proxies are moving. Avoid duplicate pairs.
+		return true
+	}
+
 	// Grow the pair buffer as needed.
 	if bp.M_pairCount == bp.M_pairCapacity {
 		bp.M_pairBuffer = append(bp.M_pairBuffer, make([]B2Pair, bp.M_pairCapacity)...)
-		bp.M_pairCapacity *= 2
+		bp.M_pairCapacity = bp.M_pairCapacity + (bp.M_pairCapacity >> 1)
 	}
 
 	bp.M_pairBuffer[bp.M_pairCount].ProxyIdA = MinInt(proxyId, bp.M_queryProxyId)

@@ -863,13 +863,20 @@ func (body *B2Body) SetTransform(position B2Vec2, angle float64) {
 }
 
 func (body *B2Body) SynchronizeFixtures() {
-	xf1 := MakeB2Transform()
-	xf1.Q.Set(body.M_sweep.A0)
-	xf1.P = B2Vec2Sub(body.M_sweep.C0, B2RotVec2Mul(xf1.Q, body.M_sweep.LocalCenter))
-
 	broadPhase := &body.M_world.M_contactManager.M_broadPhase
-	for f := body.M_fixtureList; f != nil; f = f.M_next {
-		f.Synchronize(broadPhase, xf1, body.M_xf)
+
+	if (body.M_flags & B2Body_Flags.E_awakeFlag) != 0x0000 {
+		xf1 := MakeB2Transform()
+		xf1.Q.Set(body.M_sweep.A0)
+		xf1.P = B2Vec2Sub(body.M_sweep.C0, B2RotVec2Mul(xf1.Q, body.M_sweep.LocalCenter))
+
+		for f := body.M_fixtureList; f != nil; f = f.M_next {
+			f.Synchronize(broadPhase, xf1, body.M_xf)
+		}
+	} else {
+		for f := body.M_fixtureList; f != nil; f = f.M_next {
+			f.Synchronize(broadPhase, body.M_xf, body.M_xf)
+		}
 	}
 }
 

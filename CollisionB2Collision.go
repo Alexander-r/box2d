@@ -228,7 +228,6 @@ func (bb *B2AABB) CombineTwoInPlace(aabb1, aabb2 B2AABB) {
 
 /// Does this aabb contain the provided AABB.
 func (bb B2AABB) Contains(aabb B2AABB) bool {
-
 	return (bb.LowerBound.X <= aabb.LowerBound.X &&
 		bb.LowerBound.Y <= aabb.LowerBound.Y &&
 		aabb.UpperBound.X <= bb.UpperBound.X &&

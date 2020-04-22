@@ -28,6 +28,8 @@ type B2TreeNode struct {
 
 	// leaf = 0, free node = -1
 	Height int
+
+	Moved bool
 }
 
 func (node B2TreeNode) IsLeaf() bool {
@@ -65,6 +67,16 @@ type B2DynamicTree struct {
 func (tree B2DynamicTree) GetUserData(proxyId int) interface{} {
 	B2Assert(0 <= proxyId && proxyId < tree.M_nodeCapacity)
 	return tree.M_nodes[proxyId].UserData
+}
+
+func (tree B2DynamicTree) WasMoved(proxyId int) bool {
+	B2Assert(0 <= proxyId && proxyId < tree.M_nodeCapacity)
+	return tree.M_nodes[proxyId].Moved
+}
+
+func (tree B2DynamicTree) ClearMoved(proxyId int) {
+	B2Assert(0 <= proxyId && proxyId < tree.M_nodeCapacity)
+	tree.M_nodes[proxyId].Moved = false
 }
 
 func (tree B2DynamicTree) GetFatAABB(proxyId int) B2AABB {
@@ -196,6 +208,7 @@ func MakeB2DynamicTree() B2DynamicTree {
 	for i := 0; i < tree.M_nodeCapacity-1; i++ {
 		tree.M_nodes[i].Next = i + 1
 		tree.M_nodes[i].Height = -1
+		tree.M_nodes[i].Moved = false
 	}
 
 	tree.M_nodes[tree.M_nodeCapacity-1].Next = B2_nullNode
@@ -245,6 +258,7 @@ func (tree *B2DynamicTree) AllocateNode() int {
 	tree.M_nodes[nodeId].Child2 = B2_nullNode
 	tree.M_nodes[nodeId].Height = 0
 	tree.M_nodes[nodeId].UserData = nil
+	tree.M_nodes[nodeId].Moved = false
 	tree.M_nodeCount++
 
 	return nodeId
@@ -273,6 +287,7 @@ func (tree *B2DynamicTree) CreateProxy(aabb B2AABB, userData interface{}) int {
 	tree.M_nodes[proxyId].Aabb.UpperBound = B2Vec2Add(aabb.UpperBound, r)
 	tree.M_nodes[proxyId].UserData = userData
 	tree.M_nodes[proxyId].Height = 0
+	tree.M_nodes[proxyId].Moved = true
 
 	tree.InsertLeaf(proxyId)
 
@@ -293,36 +308,52 @@ func (tree *B2DynamicTree) MoveProxy(proxyId int, aabb B2AABB, displacement B2Ve
 
 	B2Assert(tree.M_nodes[proxyId].IsLeaf())
 
-	if tree.M_nodes[proxyId].Aabb.Contains(aabb) {
-		return false
+	// Extend AABB
+	var fatAABB B2AABB
+	r := MakeB2Vec2(B2_aabbExtension, B2_aabbExtension)
+	fatAABB.LowerBound = B2Vec2Sub(aabb.LowerBound, r)
+	fatAABB.UpperBound = B2Vec2Add(aabb.UpperBound, r)
+
+	// Predict AABB movement
+	d := B2Vec2MulScalar(B2_aabbMultiplier, displacement)
+
+	if d.X < 0.0 {
+		fatAABB.LowerBound.X += d.X
+	} else {
+		fatAABB.UpperBound.X += d.X
+	}
+
+	if d.Y < 0.0 {
+		fatAABB.LowerBound.Y += d.Y
+	} else {
+		fatAABB.UpperBound.Y += d.Y
+	}
+
+	treeAABB := &tree.M_nodes[proxyId].Aabb
+	if treeAABB.Contains(aabb) {
+		// The tree AABB still contains the object, but it might be too large.
+		// Perhaps the object was moving fast but has since gone to sleep.
+		// The huge AABB is larger than the new fat AABB.
+		var hugeAABB B2AABB
+		hugeAABB.LowerBound = B2Vec2Sub(fatAABB.LowerBound, B2Vec2MulScalar(4.0, r))
+		hugeAABB.UpperBound = B2Vec2Add(fatAABB.UpperBound, B2Vec2MulScalar(4.0, r))
+
+		if hugeAABB.Contains(*treeAABB) {
+			// The tree AABB contains the object AABB and the tree AABB is
+			// not too large. No tree update needed.
+			return false
+		}
+
+		// Otherwise the tree AABB is huge and needs to be shrunk
 	}
 
 	tree.RemoveLeaf(proxyId)
 
-	// Extend AABB.
-	b := aabb.Clone()
-	r := MakeB2Vec2(B2_aabbExtension, B2_aabbExtension)
-	b.LowerBound = B2Vec2Sub(b.LowerBound, r)
-	b.UpperBound = B2Vec2Add(b.UpperBound, r)
-
-	// Predict AABB displacement.
-	d := B2Vec2MulScalar(B2_aabbMultiplier, displacement)
-
-	if d.X < 0.0 {
-		b.LowerBound.X += d.X
-	} else {
-		b.UpperBound.X += d.X
-	}
-
-	if d.Y < 0.0 {
-		b.LowerBound.Y += d.Y
-	} else {
-		b.UpperBound.Y += d.Y
-	}
-
-	tree.M_nodes[proxyId].Aabb = b
+	tree.M_nodes[proxyId].Aabb = fatAABB
 
 	tree.InsertLeaf(proxyId)
+
+	tree.M_nodes[proxyId].Moved = true
 
 	return true
 }

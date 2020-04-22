@@ -38,7 +38,7 @@ const B2_aabbExtension = 0.1
 /// This is used to fatten AABBs in the dynamic tree. This is used to predict
 /// the future position based on the current displacement.
 /// This is a dimensionless multiplier.
-const B2_aabbMultiplier = 2.0
+const B2_aabbMultiplier = 4.0
 
 /// A small length used as a collision and constraint tolerance. Usually it is
 /// chosen to be numerically significant, but visually insignificant.
