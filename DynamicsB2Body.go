@@ -541,13 +541,8 @@ func NewB2Body(bd *B2BodyDef, world *B2World) *B2Body {
 
 	body.M_type = bd.Type
 
-	if body.M_type == B2BodyType.B2_dynamicBody {
-		body.M_mass = 1.0
-		body.M_invMass = 1.0
-	} else {
-		body.M_mass = 0.0
-		body.M_invMass = 0.0
-	}
+	body.M_mass = 0.0
+	body.M_invMass = 0.0
 
 	body.M_I = 0.0
 	body.M_invI = 0.0
@@ -748,10 +743,6 @@ func (body *B2Body) ResetMassData() {
 	if body.M_mass > 0.0 {
 		body.M_invMass = 1.0 / body.M_mass
 		localCenter.OperatorScalarMulInplace(body.M_invMass)
-	} else {
-		// Force all dynamic bodies to have a positive mass.
-		body.M_mass = 1.0
-		body.M_invMass = 1.0
 	}
 
 	if body.M_I > 0.0 && (body.M_flags&B2Body_Flags.E_fixedRotationFlag) == 0 {

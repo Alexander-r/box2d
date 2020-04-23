@@ -224,15 +224,7 @@ func (island *B2Island) Solve(profile *B2Profile, step B2TimeStep, gravity B2Vec
 		if b.M_type == B2BodyType.B2_dynamicBody {
 
 			// Integrate velocities.
-			v.OperatorPlusInplace(
-				B2Vec2MulScalar(
-					h,
-					B2Vec2Add(
-						B2Vec2MulScalar(b.M_gravityScale, gravity),
-						B2Vec2MulScalar(b.M_invMass, b.M_force),
-					),
-				),
-			)
+			v.OperatorPlusInplace(B2Vec2MulScalar(h*b.M_invMass, (B2Vec2Add(B2Vec2MulScalar(b.M_gravityScale*b.M_mass, gravity), b.M_force))))
 			w += h * b.M_invI * b.M_torque
 
 			// Apply damping.

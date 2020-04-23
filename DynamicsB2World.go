@@ -1126,7 +1126,12 @@ func (world *B2World) RayCast(callback B2RaycastCallback, point1 B2Vec2, point2 
 // 			const b2Transform& xf = b.GetTransform();
 // 			for (b2Fixture* f = b.GetFixtureList(); f; f = f.GetNext())
 // 			{
-// 				if (b.IsEnabled() == false)
+// 				if (b->GetType() == b2_dynamicBody && b->m_mass == 0.0f)
+// 				{
+// 					// Bad body
+// 					DrawShape(f, xf, b2Color(1.0f, 0.0f, 0.0f));
+// 				}
+// 				else if (b->IsEnabled() == false)
 // 				{
 // 					DrawShape(f, xf, b2Color(0.5f, 0.5f, 0.3f));
 // 				}

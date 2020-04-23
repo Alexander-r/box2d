@@ -172,7 +172,6 @@ func (joint *B2MouseJoint) InitVelocityConstraints(data B2SolverData) {
 	// gamma has units of inverse mass.
 	// beta has units of inverse time.
 	h := data.Step.Dt
-	B2Assert(d+h*k > B2_epsilon)
 	joint.M_gamma = h * (d + h*k)
 	if joint.M_gamma != 0.0 {
 		joint.M_gamma = 1.0 / joint.M_gamma
