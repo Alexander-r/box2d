@@ -252,11 +252,5 @@ func (mgr *B2ContactManager) AddPair(proxyUserDataA interface{}, proxyUserDataB 
 	}
 	bodyB.M_contactList = c.GetNodeB()
 
-	// Wake up the bodies
-	if fixtureA.IsSensor() == false && fixtureB.IsSensor() == false {
-		bodyA.SetAwake(true)
-		bodyB.SetAwake(true)
-	}
-
 	mgr.M_contactCount++
 }
