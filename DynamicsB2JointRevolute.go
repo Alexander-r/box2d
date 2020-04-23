@@ -257,7 +257,7 @@ func (joint *B2RevoluteJoint) InitVelocityConstraints(data B2SolverData) {
 
 	if data.Step.WarmStarting {
 		// Scale impulses to support a variable time step.
-		joint.M_impulse.OperatorScalarMultInplace(data.Step.DtRatio)
+		joint.M_impulse.OperatorScalarMulInplace(data.Step.DtRatio)
 		joint.M_motorImpulse *= data.Step.DtRatio
 
 		P := MakeB2Vec2(joint.M_impulse.X, joint.M_impulse.Y)

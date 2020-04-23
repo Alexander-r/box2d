@@ -202,7 +202,7 @@ func (v *B2Vec3) OperatorMinusInplace(other B2Vec3) {
 }
 
 /// Multiply this vector by a scalar.
-func (v *B2Vec3) OperatorScalarMultInplace(a float64) {
+func (v *B2Vec3) OperatorScalarMulInplace(a float64) {
 	v.X *= a
 	v.Y *= a
 	v.Z *= a
