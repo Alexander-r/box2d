@@ -23,6 +23,15 @@ type B2WheelJointDef struct {
 	/// The local translation axis in bodyA.
 	LocalAxisA B2Vec2
 
+	/// Enable/disable the joint limit.
+	EnableLimit bool
+
+	/// The lower translation limit, usually in meters.
+	LowerTranslation float64
+
+	/// The upper translation limit, usually in meters.
+	UpperTranslation float64
+
 	/// Enable/disable the joint motor.
 	EnableMotor bool
 
@@ -32,11 +41,11 @@ type B2WheelJointDef struct {
 	/// The desired motor speed in radians per second.
 	MotorSpeed float64
 
-	/// Suspension frequency, zero indicates no suspension
-	FrequencyHz float64
+	/// Suspension stiffness. Typically in units N/m.
+	Stiffness float64
 
-	/// Suspension damping ratio, one indicates critical damping
-	DampingRatio float64
+	/// Suspension damping. Typically in units of N*s/m.
+	Damping float64
 }
 
 func MakeB2WheelJointDef() B2WheelJointDef {
@@ -48,26 +57,25 @@ func MakeB2WheelJointDef() B2WheelJointDef {
 	res.LocalAnchorA.SetZero()
 	res.LocalAnchorB.SetZero()
 	res.LocalAxisA.Set(1.0, 0.0)
+	res.EnableLimit = false
+	res.LowerTranslation = 0.0
+	res.UpperTranslation = 0.0
 	res.EnableMotor = false
 	res.MaxMotorTorque = 0.0
 	res.MotorSpeed = 0.0
-	res.FrequencyHz = 2.0
-	res.DampingRatio = 0.7
+	res.Stiffness = 0.0
+	res.Damping = 0.0
 
 	return res
 }
 
 /// A wheel joint. This joint provides two degrees of freedom: translation
 /// along an axis fixed in bodyA and rotation in the plane. In other words, it is a point to
-/// line constraint with a rotational motor and a linear spring/damper.
-/// This joint is designed for vehicle suspensions.
+/// line constraint with a rotational motor and a linear spring/damper. The spring/damper is
+/// initialized upon creation. This joint is designed for vehicle suspensions.
 type B2WheelJoint struct {
 	*B2Joint
 
-	M_frequencyHz  float64
-	M_dampingRatio float64
-
-	// Solver shared
 	M_localAnchorA B2Vec2
 	M_localAnchorB B2Vec2
 	M_localXAxisA  B2Vec2
@@ -77,9 +85,20 @@ type B2WheelJoint struct {
 	M_motorImpulse  float64
 	M_springImpulse float64
 
+	M_lowerImpulse     float64
+	M_upperImpulse     float64
+	M_translation      float64
+	M_lowerTranslation float64
+	M_upperTranslation float64
+
 	M_maxMotorTorque float64
 	M_motorSpeed     float64
-	M_enableMotor    bool
+
+	M_enableLimit bool
+	M_enableMotor bool
+
+	M_stiffness float64
+	M_damping   float64
 
 	// Solver temp
 	M_indexA       int
@@ -100,6 +119,7 @@ type B2WheelJoint struct {
 
 	M_mass       float64
 	M_motorMass  float64
+	M_axialMass  float64
 	M_springMass float64
 
 	M_bias  float64
@@ -127,22 +147,6 @@ func (joint B2WheelJoint) GetMotorSpeed() float64 {
 
 func (joint B2WheelJoint) GetMaxMotorTorque() float64 {
 	return joint.M_maxMotorTorque
-}
-
-func (joint *B2WheelJoint) SetSpringFrequencyHz(hz float64) {
-	joint.M_frequencyHz = hz
-}
-
-func (joint B2WheelJoint) GetSpringFrequencyHz() float64 {
-	return joint.M_frequencyHz
-}
-
-func (joint *B2WheelJoint) SetSpringDampingRatio(ratio float64) {
-	joint.M_dampingRatio = ratio
-}
-
-func (joint B2WheelJoint) GetSpringDampingRatio() float64 {
-	return joint.M_dampingRatio
 }
 
 // Linear constraint (point-to-line)
@@ -186,18 +190,25 @@ func MakeB2WheelJoint(def *B2WheelJointDef) *B2WheelJoint {
 	res.M_springMass = 0.0
 	res.M_springImpulse = 0.0
 
+	res.M_axialMass = 0.0
+	res.M_lowerImpulse = 0.0
+	res.M_upperImpulse = 0.0
+	res.M_lowerTranslation = def.LowerTranslation
+	res.M_upperTranslation = def.UpperTranslation
+	res.M_enableLimit = def.EnableLimit
+
 	res.M_maxMotorTorque = def.MaxMotorTorque
 	res.M_motorSpeed = def.MotorSpeed
 	res.M_enableMotor = def.EnableMotor
-
-	res.M_frequencyHz = def.FrequencyHz
-	res.M_dampingRatio = def.DampingRatio
 
 	res.M_bias = 0.0
 	res.M_gamma = 0.0
 
 	res.M_ax.SetZero()
 	res.M_ay.SetZero()
+
+	res.M_stiffness = def.Stiffness
+	res.M_damping = def.Damping
 
 	return &res
 }
@@ -250,49 +261,50 @@ func (joint *B2WheelJoint) InitVelocityConstraints(data B2SolverData) {
 	}
 
 	// Spring constraint
+	joint.M_ax = B2RotVec2Mul(qA, joint.M_localXAxisA)
+	joint.M_sAx = B2Vec2Cross(B2Vec2Add(d, rA), joint.M_ax)
+	joint.M_sBx = B2Vec2Cross(rB, joint.M_ax)
+
+	invMass := mA + mB + iA*joint.M_sAx*joint.M_sAx + iB*joint.M_sBx*joint.M_sBx
+	if invMass > 0.0 {
+		joint.M_axialMass = 1.0 / invMass
+	} else {
+		joint.M_axialMass = 0.0
+	}
+
 	joint.M_springMass = 0.0
 	joint.M_bias = 0.0
 	joint.M_gamma = 0.0
-	if joint.M_frequencyHz > 0.0 {
-		joint.M_ax = B2RotVec2Mul(qA, joint.M_localXAxisA)
-		joint.M_sAx = B2Vec2Cross(B2Vec2Add(d, rA), joint.M_ax)
-		joint.M_sBx = B2Vec2Cross(rB, joint.M_ax)
 
-		invMass := mA + mB + iA*joint.M_sAx*joint.M_sAx + iB*joint.M_sBx*joint.M_sBx
+	if joint.M_stiffness > 0.0 && invMass > 0.0 {
+		joint.M_springMass = 1.0 / invMass
 
-		if invMass > 0.0 {
-			joint.M_springMass = 1.0 / invMass
+		C := B2Vec2Dot(d, joint.M_ax)
 
-			C := B2Vec2Dot(d, joint.M_ax)
+		// magic formulas
+		h := data.Step.Dt
+		joint.M_gamma = h * (joint.M_damping + h*joint.M_stiffness)
+		if joint.M_gamma > 0.0 {
+			joint.M_gamma = 1.0 / joint.M_gamma
+		}
 
-			// Frequency
-			omega := 2.0 * B2_pi * joint.M_frequencyHz
+		joint.M_bias = C * h * joint.M_stiffness * joint.M_gamma
 
-			// Damping coefficient
-			damp := 2.0 * joint.M_springMass * joint.M_dampingRatio * omega
-
-			// Spring stiffness
-			k := joint.M_springMass * omega * omega
-
-			// magic formulas
-			h := data.Step.Dt
-			joint.M_gamma = h * (damp + h*k)
-			if joint.M_gamma > 0.0 {
-				joint.M_gamma = 1.0 / joint.M_gamma
-			}
-
-			joint.M_bias = C * h * k * joint.M_gamma
-
-			joint.M_springMass = invMass + joint.M_gamma
-			if joint.M_springMass > 0.0 {
-				joint.M_springMass = 1.0 / joint.M_springMass
-			}
+		joint.M_springMass = invMass + joint.M_gamma
+		if joint.M_springMass > 0.0 {
+			joint.M_springMass = 1.0 / joint.M_springMass
 		}
 	} else {
 		joint.M_springImpulse = 0.0
 	}
 
-	// Rotational motor
+	if joint.M_enableLimit {
+		joint.M_translation = B2Vec2Dot(joint.M_ax, d)
+	} else {
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
+	}
+
 	if joint.M_enableMotor {
 		joint.M_motorMass = iA + iB
 		if joint.M_motorMass > 0.0 {
@@ -309,9 +321,10 @@ func (joint *B2WheelJoint) InitVelocityConstraints(data B2SolverData) {
 		joint.M_springImpulse *= data.Step.DtRatio
 		joint.M_motorImpulse *= data.Step.DtRatio
 
-		P := B2Vec2Add(B2Vec2MulScalar(joint.M_impulse, joint.M_ay), B2Vec2MulScalar(joint.M_springImpulse, joint.M_ax))
-		LA := joint.M_impulse*joint.M_sAy + joint.M_springImpulse*joint.M_sAx + joint.M_motorImpulse
-		LB := joint.M_impulse*joint.M_sBy + joint.M_springImpulse*joint.M_sBx + joint.M_motorImpulse
+		axialImpulse := joint.M_springImpulse + joint.M_lowerImpulse - joint.M_upperImpulse
+		P := B2Vec2Add(B2Vec2MulScalar(joint.M_impulse, joint.M_ay), B2Vec2MulScalar(axialImpulse, joint.M_ax))
+		LA := joint.M_impulse*joint.M_sAy + axialImpulse*joint.M_sAx + joint.M_motorImpulse
+		LB := joint.M_impulse*joint.M_sBy + axialImpulse*joint.M_sBx + joint.M_motorImpulse
 
 		vA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
 		wA -= joint.M_invIA * LA
@@ -322,6 +335,8 @@ func (joint *B2WheelJoint) InitVelocityConstraints(data B2SolverData) {
 		joint.M_impulse = 0.0
 		joint.M_springImpulse = 0.0
 		joint.M_motorImpulse = 0.0
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
 	}
 
 	data.Velocities[joint.M_indexA].V = vA
@@ -372,6 +387,48 @@ func (joint *B2WheelJoint) SolveVelocityConstraints(data B2SolverData) {
 		wB += iB * impulse
 	}
 
+	if joint.M_enableLimit {
+		// Lower limit
+		{
+			C := joint.M_translation - joint.M_lowerTranslation
+			Cdot := B2Vec2Dot(joint.M_ax, B2Vec2Sub(vB, vA)) + joint.M_sBx*wB - joint.M_sAx*wA
+			impulse := -joint.M_axialMass * (Cdot + math.Max(C, 0.0)*data.Step.Inv_dt)
+			oldImpulse := joint.M_lowerImpulse
+			joint.M_lowerImpulse = math.Max(joint.M_lowerImpulse+impulse, 0.0)
+			impulse = joint.M_lowerImpulse - oldImpulse
+
+			P := B2Vec2MulScalar(impulse, joint.M_ax)
+			LA := impulse * joint.M_sAx
+			LB := impulse * joint.M_sBx
+
+			vA.OperatorMinusInplace(B2Vec2MulScalar(mA, P))
+			wA -= iA * LA
+			vB.OperatorPlusInplace(B2Vec2MulScalar(mB, P))
+			wB += iB * LB
+		}
+
+		// Upper limit
+		// Note: signs are flipped to keep C positive when the constraint is satisfied.
+		// This also keeps the impulse positive when the limit is active.
+		{
+			C := joint.M_upperTranslation - joint.M_translation
+			Cdot := B2Vec2Dot(joint.M_ax, B2Vec2Sub(vA, vB)) + joint.M_sAx*wA - joint.M_sBx*wB
+			impulse := -joint.M_axialMass * (Cdot + math.Max(C, 0.0)*data.Step.Inv_dt)
+			oldImpulse := joint.M_upperImpulse
+			joint.M_upperImpulse = math.Max(joint.M_upperImpulse+impulse, 0.0)
+			impulse = joint.M_upperImpulse - oldImpulse
+
+			P := B2Vec2MulScalar(impulse, joint.M_ax)
+			LA := impulse * joint.M_sAx
+			LB := impulse * joint.M_sBx
+
+			vA.OperatorPlusInplace(B2Vec2MulScalar(mA, P))
+			wA += iA * LA
+			vB.OperatorMinusInplace(B2Vec2MulScalar(mB, P))
+			wB -= iB * LB
+		}
+	}
+
 	// Solve point to line constraint
 	{
 		Cdot := B2Vec2Dot(joint.M_ay, B2Vec2Sub(vB, vA)) + joint.M_sBy*wB - joint.M_sAy*wA
@@ -401,44 +458,92 @@ func (joint *B2WheelJoint) SolvePositionConstraints(data B2SolverData) bool {
 	cB := data.Positions[joint.M_indexB].C
 	aB := data.Positions[joint.M_indexB].A
 
-	qA := MakeB2RotFromAngle(aA)
-	qB := MakeB2RotFromAngle(aB)
+	linearError := 0.0
 
-	rA := B2RotVec2Mul(qA, B2Vec2Sub(joint.M_localAnchorA, joint.M_localCenterA))
-	rB := B2RotVec2Mul(qB, B2Vec2Sub(joint.M_localAnchorB, joint.M_localCenterB))
-	d := B2Vec2Sub(B2Vec2Add(B2Vec2Sub(cB, cA), rB), rA)
+	if joint.M_enableLimit {
+		qA := MakeB2RotFromAngle(aA)
+		qB := MakeB2RotFromAngle(aB)
 
-	ay := B2RotVec2Mul(qA, joint.M_localYAxisA)
+		rA := B2RotVec2Mul(qA, B2Vec2Sub(joint.M_localAnchorA, joint.M_localCenterA))
+		rB := B2RotVec2Mul(qB, B2Vec2Sub(joint.M_localAnchorB, joint.M_localCenterB))
+		d := B2Vec2Sub(B2Vec2Add(B2Vec2Sub(cB, cA), rB), rA)
 
-	sAy := B2Vec2Cross(B2Vec2Add(d, rA), ay)
-	sBy := B2Vec2Cross(rB, ay)
+		ax := B2RotVec2Mul(qA, joint.M_localXAxisA)
+		sAx := B2Vec2Cross(B2Vec2Add(d, rA), joint.M_ax)
+		sBx := B2Vec2Cross(rB, joint.M_ax)
 
-	C := B2Vec2Dot(d, ay)
+		C := 0.0
+		translation := B2Vec2Dot(ax, d)
+		if math.Abs(joint.M_upperTranslation-joint.M_lowerTranslation) < 2.0*B2_linearSlop {
+			C = translation
+		} else if translation <= joint.M_lowerTranslation {
+			C = math.Min(translation-joint.M_lowerTranslation, 0.0)
+		} else if translation >= joint.M_upperTranslation {
+			C = math.Max(translation-joint.M_upperTranslation, 0.0)
+		}
 
-	k := joint.M_invMassA + joint.M_invMassB + joint.M_invIA*joint.M_sAy*joint.M_sAy + joint.M_invIB*joint.M_sBy*joint.M_sBy
+		if C != 0.0 {
 
-	impulse := 0.0
-	if k != 0.0 {
-		impulse = -C / k
-	} else {
-		impulse = 0.0
+			invMass := joint.M_invMassA + joint.M_invMassB + joint.M_invIA*sAx*sAx + joint.M_invIB*sBx*sBx
+			impulse := 0.0
+			if invMass != 0.0 {
+				impulse = -C / invMass
+			}
+
+			P := B2Vec2MulScalar(impulse, ax)
+			LA := impulse * sAx
+			LB := impulse * sBx
+
+			cA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
+			aA -= joint.M_invIA * LA
+			cB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
+			aB += joint.M_invIB * LB
+
+			linearError = math.Abs(C)
+		}
 	}
 
-	P := B2Vec2MulScalar(impulse, ay)
-	LA := impulse * sAy
-	LB := impulse * sBy
+	// Solve perpendicular constraint
+	{
+		qA := MakeB2RotFromAngle(aA)
+		qB := MakeB2RotFromAngle(aB)
 
-	cA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
-	aA -= joint.M_invIA * LA
-	cB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
-	aB += joint.M_invIB * LB
+		rA := B2RotVec2Mul(qA, B2Vec2Sub(joint.M_localAnchorA, joint.M_localCenterA))
+		rB := B2RotVec2Mul(qB, B2Vec2Sub(joint.M_localAnchorB, joint.M_localCenterB))
+		d := B2Vec2Sub(B2Vec2Add(B2Vec2Sub(cB, cA), rB), rA)
+
+		ay := B2RotVec2Mul(qA, joint.M_localYAxisA)
+
+		sAy := B2Vec2Cross(B2Vec2Add(d, rA), ay)
+		sBy := B2Vec2Cross(rB, ay)
+
+		C := B2Vec2Dot(d, ay)
+
+		invMass := joint.M_invMassA + joint.M_invMassB + joint.M_invIA*joint.M_sAy*joint.M_sAy + joint.M_invIB*joint.M_sBy*joint.M_sBy
+
+		impulse := 0.0
+		if invMass != 0.0 {
+			impulse = -C / invMass
+		}
+
+		P := B2Vec2MulScalar(impulse, ay)
+		LA := impulse * sAy
+		LB := impulse * sBy
+
+		cA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
+		aA -= joint.M_invIA * LA
+		cB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
+		aB += joint.M_invIB * LB
+
+		linearError = math.Max(linearError, math.Abs(C))
+	}
 
 	data.Positions[joint.M_indexA].C = cA
 	data.Positions[joint.M_indexA].A = aA
 	data.Positions[joint.M_indexB].C = cB
 	data.Positions[joint.M_indexB].A = aB
 
-	return math.Abs(C) <= B2_linearSlop
+	return linearError <= B2_linearSlop
 }
 
 func (joint B2WheelJoint) GetAnchorA() B2Vec2 {
@@ -502,6 +607,45 @@ func (joint B2WheelJoint) GetJointAngularSpeed() float64 {
 	return wB - wA
 }
 
+/// Is the joint limit enabled?
+func (joint B2WheelJoint) IsLimitEnabled() bool {
+	return joint.M_enableLimit
+}
+
+/// Enable/disable the joint translation limit.
+func (joint B2WheelJoint) EnableLimit(flag bool) {
+	if flag != joint.M_enableLimit {
+		joint.M_bodyA.SetAwake(true)
+		joint.M_bodyB.SetAwake(true)
+		joint.M_enableLimit = flag
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
+	}
+}
+
+/// Get the lower joint translation limit, usually in meters.
+func (joint B2WheelJoint) GetLowerLimit() float64 {
+	return joint.M_lowerTranslation
+}
+
+/// Get the upper joint translation limit, usually in meters.
+func (joint B2WheelJoint) GetUpperLimit() float64 {
+	return joint.M_upperTranslation
+}
+
+/// Set the joint translation limits, usually in meters.
+func (joint B2WheelJoint) SetLimits(lower float64, upper float64) {
+	B2Assert(lower <= upper)
+	if lower != joint.M_lowerTranslation || upper != joint.M_upperTranslation {
+		joint.M_bodyA.SetAwake(true)
+		joint.M_bodyB.SetAwake(true)
+		joint.M_lowerTranslation = lower
+		joint.M_upperTranslation = upper
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
+	}
+}
+
 func (joint B2WheelJoint) IsMotorEnabled() bool {
 	return joint.M_enableMotor
 }
@@ -534,6 +678,26 @@ func (joint B2WheelJoint) GetMotorTorque(inv_dt float64) float64 {
 	return inv_dt * joint.M_motorImpulse
 }
 
+/// Access spring stiffness
+func (joint *B2WheelJoint) SetStiffness(stiffness float64) {
+	joint.M_stiffness = stiffness
+}
+
+/// Access spring stiffness
+func (joint B2WheelJoint) GetStiffness() float64 {
+	return joint.M_stiffness
+}
+
+/// Access damping
+func (joint *B2WheelJoint) SetDamping(damping float64) {
+	joint.M_damping = damping
+}
+
+/// Access damping
+func (joint B2WheelJoint) GetDamping() float64 {
+	return joint.M_damping
+}
+
 func (joint *B2WheelJoint) Dump() {
 	indexA := joint.M_bodyA.M_islandIndex
 	indexB := joint.M_bodyB.M_islandIndex
@@ -548,7 +712,7 @@ func (joint *B2WheelJoint) Dump() {
 	fmt.Printf("  jd.enableMotor = bool(%v);\n", joint.M_enableMotor)
 	fmt.Printf("  jd.motorSpeed = %.15f;\n", joint.M_motorSpeed)
 	fmt.Printf("  jd.maxMotorTorque = %.15f;\n", joint.M_maxMotorTorque)
-	fmt.Printf("  jd.frequencyHz = %.15f;\n", joint.M_frequencyHz)
-	fmt.Printf("  jd.dampingRatio = %.15f;\n", joint.M_dampingRatio)
+	fmt.Printf("  jd.jd.stiffness = %.15f;\n", joint.M_stiffness)
+	fmt.Printf("  jd.damping = %.15f;\n", joint.M_damping)
 	fmt.Printf("  joints[%d] = m_world.CreateJoint(&jd);\n", joint.M_index)
 }

@@ -1069,47 +1069,6 @@ func (world *B2World) RayCast(callback B2RaycastCallback, point1 B2Vec2, point2 
 // 	}
 // }
 
-// void (world *B2World) DrawJoint(b2Joint* joint)
-// {
-// 	b2Body* bodyA = joint.GetBodyA();
-// 	b2Body* bodyB = joint.GetBodyB();
-// 	const b2Transform& xf1 = bodyA.GetTransform();
-// 	const b2Transform& xf2 = bodyB.GetTransform();
-// 	b2Vec2 x1 = xf1.p;
-// 	b2Vec2 x2 = xf2.p;
-// 	b2Vec2 p1 = joint.GetAnchorA();
-// 	b2Vec2 p2 = joint.GetAnchorB();
-
-// 	b2Color color(0.5f, 0.8f, 0.8f);
-
-// 	switch (joint.GetType())
-// 	{
-// 	case e_distanceJoint:
-// 		g_debugDraw.DrawSegment(p1, p2, color);
-// 		break;
-
-// 	case e_pulleyJoint:
-// 		{
-// 			b2PulleyJoint* pulley = (b2PulleyJoint*)joint;
-// 			b2Vec2 s1 = pulley.GetGroundAnchorA();
-// 			b2Vec2 s2 = pulley.GetGroundAnchorB();
-// 			g_debugDraw.DrawSegment(s1, p1, color);
-// 			g_debugDraw.DrawSegment(s2, p2, color);
-// 			g_debugDraw.DrawSegment(s1, s2, color);
-// 		}
-// 		break;
-
-// 	case e_mouseJoint:
-// 		// don't draw this
-// 		break;
-
-// 	default:
-// 		g_debugDraw.DrawSegment(x1, p1, color);
-// 		g_debugDraw.DrawSegment(p1, p2, color);
-// 		g_debugDraw.DrawSegment(x2, p2, color);
-// 	}
-// }
-
 // void (world *B2World) DebugDraw()
 // {
 // 	if (g_debugDraw == nullptr)
@@ -1159,7 +1118,7 @@ func (world *B2World) RayCast(callback B2RaycastCallback, point1 B2Vec2, point2 
 // 	{
 // 		for (b2Joint* j = m_jointList; j; j = j.GetNext())
 // 		{
-// 			DrawJoint(j);
+// 			j->Draw(m_debugDraw);
 // 		}
 // 	}
 
