@@ -603,6 +603,7 @@ func (collider *B2EPCollider) ComputePolygonSeparation() B2EPAxis {
 	return axis
 }
 
+/// Compute the collision manifold between an edge and a polygon.
 func B2CollideEdgeAndPolygon(manifold *B2Manifold, edgeA *B2EdgeShape, xfA B2Transform, polygonB *B2PolygonShape, xfB B2Transform) {
 	collider := MakeB2EPCollider()
 	collider.Collide(manifold, edgeA, xfA, polygonB, xfB)
