@@ -66,7 +66,6 @@ type B2RopeJoint struct {
 	M_invIA        float64
 	M_invIB        float64
 	M_mass         float64
-	M_state        uint8
 }
 
 /// The local anchor point relative to bodyA's origin.
@@ -104,7 +103,6 @@ func MakeB2RopeJoint(def *B2RopeJointDef) *B2RopeJoint {
 
 	res.M_mass = 0.0
 	res.M_impulse = 0.0
-	res.M_state = B2LimitState.E_inactiveLimit
 	res.M_length = 0.0
 
 	return &res
@@ -139,12 +137,7 @@ func (joint *B2RopeJoint) InitVelocityConstraints(data B2SolverData) {
 
 	joint.M_length = joint.M_u.Length()
 
-	C := joint.M_length - joint.M_maxLength
-	if C > 0.0 {
-		joint.M_state = B2LimitState.E_atUpperLimit
-	} else {
-		joint.M_state = B2LimitState.E_inactiveLimit
-	}
+	//C := joint.M_length - joint.M_maxLength
 
 	if joint.M_length > B2_linearSlop {
 		joint.M_u.OperatorScalarMulInplace(1.0 / joint.M_length)
@@ -233,8 +226,8 @@ func (joint *B2RopeJoint) SolvePositionConstraints(data B2SolverData) bool {
 	rB := B2RotVec2Mul(qB, B2Vec2Sub(joint.M_localAnchorB, joint.M_localCenterB))
 	u := B2Vec2Sub(B2Vec2Sub(B2Vec2Add(cB, rB), cA), rA)
 
-	length := u.Normalize()
-	C := length - joint.M_maxLength
+	joint.M_length = u.Normalize()
+	C := joint.M_length - joint.M_maxLength
 
 	C = B2FloatClamp(C, 0.0, B2_maxLinearCorrection)
 
@@ -251,7 +244,7 @@ func (joint *B2RopeJoint) SolvePositionConstraints(data B2SolverData) bool {
 	data.Positions[joint.M_indexB].C = cB
 	data.Positions[joint.M_indexB].A = aB
 
-	return length-joint.M_maxLength < B2_linearSlop
+	return joint.M_length-joint.M_maxLength < B2_linearSlop
 }
 
 func (joint B2RopeJoint) GetAnchorA() B2Vec2 {
@@ -275,8 +268,9 @@ func (joint B2RopeJoint) GetMaxLength() float64 {
 	return joint.M_maxLength
 }
 
-func (joint B2RopeJoint) GetLimitState() uint8 {
-	return joint.M_state
+// Get current length
+func (joint B2RopeJoint) GetLength() float64 {
+	return joint.M_length
 }
 
 func (joint *B2RopeJoint) Dump() {
