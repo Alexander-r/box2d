@@ -64,6 +64,7 @@ func MakeB2FixtureDef() B2FixtureDef {
 		Restitution: 0.0,
 		Density:     0.0,
 		IsSensor:    false,
+		Filter:      B2Filter{CategoryBits: 0x0001,MaskBits:0xFFFF},
 	}
 }
 
