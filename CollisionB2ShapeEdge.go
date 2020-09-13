@@ -1,16 +1,18 @@
 package box2d
 
 /// A line segment (edge) shape. These can be connected in chains or loops
-/// to other edge shapes. The connectivity information is used to ensure
-/// correct contact normals.
+/// to other edge shapes. Edges created independently are two-sided and do
+/// no provide smooth movement across junctions.
 type B2EdgeShape struct {
 	B2Shape
 	/// These are the edge vertices
 	M_vertex1, M_vertex2 B2Vec2
 
 	/// Optional adjacent vertices. These are used for smooth collision.
-	M_vertex0, M_vertex3       B2Vec2
-	M_hasVertex0, M_hasVertex3 bool
+	M_vertex0, M_vertex3 B2Vec2
+
+	/// Uses m_vertex0 and m_vertex3 to create smooth collision.
+	M_oneSided bool
 }
 
 func MakeB2EdgeShape() B2EdgeShape {
@@ -19,10 +21,9 @@ func MakeB2EdgeShape() B2EdgeShape {
 			M_type:   B2Shape_Type.E_edge,
 			M_radius: B2_polygonRadius,
 		},
-		M_vertex0:    MakeB2Vec2(0, 0),
-		M_vertex3:    MakeB2Vec2(0, 0),
-		M_hasVertex0: false,
-		M_hasVertex3: false,
+		M_vertex0:  MakeB2Vec2(0, 0),
+		M_vertex3:  MakeB2Vec2(0, 0),
+		M_oneSided: false,
 	}
 }
 
@@ -39,11 +40,23 @@ func NewB2EdgeShape() *B2EdgeShape {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-func (edge *B2EdgeShape) Set(v1 B2Vec2, v2 B2Vec2) {
+/// Set this as a part of a sequence. Vertex v0 precedes the edge and vertex v3
+/// follows. These extra vertices are used to provide smooth movement
+/// across junctions. This also makes the collision one-sided. The edge
+/// normal points to the right looking from v1 to v2.
+func (edge *B2EdgeShape) SetOneSided(v0 B2Vec2, v1 B2Vec2, v2 B2Vec2, v3 B2Vec2) {
+	edge.M_vertex0 = v0
 	edge.M_vertex1 = v1
 	edge.M_vertex2 = v2
-	edge.M_hasVertex0 = false
-	edge.M_hasVertex3 = false
+	edge.M_vertex3 = v3
+	edge.M_oneSided = true
+}
+
+/// Set this as an isolated edge. Collision is two-sided.
+func (edge *B2EdgeShape) SetTwoSided(v1 B2Vec2, v2 B2Vec2) {
+	edge.M_vertex1 = v1
+	edge.M_vertex2 = v2
+	edge.M_oneSided = false
 }
 
 func (edge B2EdgeShape) Clone() B2ShapeInterface {
@@ -52,9 +65,7 @@ func (edge B2EdgeShape) Clone() B2ShapeInterface {
 	clone.M_vertex1 = edge.M_vertex1
 	clone.M_vertex2 = edge.M_vertex2
 	clone.M_vertex3 = edge.M_vertex3
-	clone.M_hasVertex0 = edge.M_hasVertex0
-	clone.M_hasVertex3 = edge.M_hasVertex3
-
+	clone.M_oneSided = edge.M_oneSided
 	return clone
 }
 
@@ -73,7 +84,6 @@ func (edge B2EdgeShape) TestPoint(xf B2Transform, p B2Vec2) bool {
 // p1 + t * d = v1 + s * e
 // s * e - t * d = p1 - v1
 func (edge B2EdgeShape) RayCast(output *B2RayCastOutput, input B2RayCastInput, xf B2Transform, childIndex int) bool {
-
 	// Put the ray into the edge's frame of reference.
 	p1 := B2RotVec2MulT(xf.Q, B2Vec2Sub(input.P1, xf.P))
 	p2 := B2RotVec2MulT(xf.Q, B2Vec2Sub(input.P2, xf.P))
@@ -82,6 +92,8 @@ func (edge B2EdgeShape) RayCast(output *B2RayCastOutput, input B2RayCastInput, x
 	v1 := edge.M_vertex1
 	v2 := edge.M_vertex2
 	e := B2Vec2Sub(v2, v1)
+
+	// Normal points to the right, looking from v1 at v2
 	normal := MakeB2Vec2(e.Y, -e.X)
 	normal.Normalize()
 
@@ -89,6 +101,10 @@ func (edge B2EdgeShape) RayCast(output *B2RayCastOutput, input B2RayCastInput, x
 	// dot(normal, q - v1) = 0
 	// dot(normal, p1 - v1) + t * dot(normal, d) = 0
 	numerator := B2Vec2Dot(normal, B2Vec2Sub(v1, p1))
+	if edge.M_oneSided && numerator > 0.0 {
+		return false
+	}
+
 	denominator := B2Vec2Dot(normal, d)
 
 	if denominator == 0.0 {

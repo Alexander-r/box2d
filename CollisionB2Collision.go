@@ -450,7 +450,7 @@ func (bb B2AABB) RayCast(output *B2RayCastOutput, input B2RayCastInput) bool {
 func B2ClipSegmentToLine(vOut []B2ClipVertex, vIn []B2ClipVertex, normal B2Vec2, offset float64, vertexIndexA int) int {
 
 	// Start with no output points
-	numOut := 0
+	count := 0
 
 	// Calculate the distance of end points to the line
 	distance0 := B2Vec2Dot(normal, vIn[0].V) - offset
@@ -458,33 +458,33 @@ func B2ClipSegmentToLine(vOut []B2ClipVertex, vIn []B2ClipVertex, normal B2Vec2,
 
 	// If the points are behind the plane
 	if distance0 <= 0.0 {
-		vOut[numOut] = vIn[0]
-		numOut++
+		vOut[count] = vIn[0]
+		count++
 	}
 
 	if distance1 <= 0.0 {
-		vOut[numOut] = vIn[1]
-		numOut++
+		vOut[count] = vIn[1]
+		count++
 	}
 
 	// If the points are on different sides of the plane
 	if distance0*distance1 < 0.0 {
 		// Find intersection point of edge and plane
 		interp := distance0 / (distance0 - distance1)
-		vOut[numOut].V = B2Vec2Add(
+		vOut[count].V = B2Vec2Add(
 			vIn[0].V,
 			B2Vec2MulScalar(interp, B2Vec2Sub(vIn[1].V, vIn[0].V)),
 		)
 
 		// VertexA is hitting edgeB.
-		vOut[numOut].Id.IndexA = uint8(vertexIndexA)
-		vOut[numOut].Id.IndexB = vIn[0].Id.IndexB
-		vOut[numOut].Id.TypeA = B2ContactFeature_Type.E_vertex
-		vOut[numOut].Id.TypeB = B2ContactFeature_Type.E_face
-		numOut++
+		vOut[count].Id.IndexA = uint8(vertexIndexA)
+		vOut[count].Id.IndexB = vIn[0].Id.IndexB
+		vOut[count].Id.TypeA = B2ContactFeature_Type.E_vertex
+		vOut[count].Id.TypeB = B2ContactFeature_Type.E_face
+		count++
 	}
 
-	return numOut
+	return count
 }
 
 func B2TestOverlapShapes(shapeA B2ShapeInterface, indexA int, shapeB B2ShapeInterface, indexB int, xfA B2Transform, xfB B2Transform) bool {

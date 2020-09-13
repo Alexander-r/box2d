@@ -26,7 +26,7 @@ func TestCPPCompliance(t *testing.T) {
 		ground := world.CreateBody(&bd)
 
 		shape := box2d.MakeB2EdgeShape()
-		shape.Set(box2d.MakeB2Vec2(-20.0, 0.0), box2d.MakeB2Vec2(20.0, 0.0))
+		shape.SetTwoSided(box2d.MakeB2Vec2(-20.0, 0.0), box2d.MakeB2Vec2(20.0, 0.0))
 		ground.CreateFixture(&shape, 0.0)
 		characters["00_ground"] = ground
 	}
@@ -39,11 +39,11 @@ func TestCPPCompliance(t *testing.T) {
 		ground := world.CreateBody(&bd)
 
 		shape := box2d.MakeB2EdgeShape()
-		shape.Set(box2d.MakeB2Vec2(-8.0, 1.0), box2d.MakeB2Vec2(-6.0, 1.0))
+		shape.SetTwoSided(box2d.MakeB2Vec2(-8.0, 1.0), box2d.MakeB2Vec2(-6.0, 1.0))
 		ground.CreateFixture(&shape, 0.0)
-		shape.Set(box2d.MakeB2Vec2(-6.0, 1.0), box2d.MakeB2Vec2(-4.0, 1.0))
+		shape.SetTwoSided(box2d.MakeB2Vec2(-6.0, 1.0), box2d.MakeB2Vec2(-4.0, 1.0))
 		ground.CreateFixture(&shape, 0.0)
-		shape.Set(box2d.MakeB2Vec2(-4.0, 1.0), box2d.MakeB2Vec2(-2.0, 1.0))
+		shape.SetTwoSided(box2d.MakeB2Vec2(-4.0, 1.0), box2d.MakeB2Vec2(-2.0, 1.0))
 		ground.CreateFixture(&shape, 0.0)
 		characters["01_colinearground"] = ground
 	}
@@ -60,7 +60,7 @@ func TestCPPCompliance(t *testing.T) {
 		vs[2].Set(7.0, 8.0)
 		vs[3].Set(8.0, 7.0)
 		shape := box2d.MakeB2ChainShape()
-		shape.CreateChain(vs, 4)
+		shape.CreateLoop(vs, 4)
 		ground.CreateFixture(&shape, 0.0)
 		characters["02_chainshape"] = ground
 	}

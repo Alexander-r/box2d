@@ -400,8 +400,7 @@ func (fix *B2Fixture) Dump(bodyIndex int) {
 			fmt.Print(fmt.Printf("    shape.m_vertex1.Set(%.15f, %.15f);\n", s.M_vertex1.X, s.M_vertex1.Y))
 			fmt.Print(fmt.Printf("    shape.m_vertex2.Set(%.15f, %.15f);\n", s.M_vertex2.X, s.M_vertex2.Y))
 			fmt.Print(fmt.Printf("    shape.m_vertex3.Set(%.15f, %.15f);\n", s.M_vertex3.X, s.M_vertex3.Y))
-			fmt.Print(fmt.Printf("    shape.m_hasVertex0 = bool(%v);\n", s.M_hasVertex0))
-			fmt.Print(fmt.Printf("    shape.m_hasVertex3 = bool(%v);\n", s.M_hasVertex3))
+			fmt.Print(fmt.Printf("    shape.m_oneSided = bool(%v);\\n", s.M_oneSided))
 		}
 		break
 
@@ -428,8 +427,6 @@ func (fix *B2Fixture) Dump(bodyIndex int) {
 			fmt.Print(fmt.Printf("    shape.CreateChain(vs, %d);\n", s.M_count))
 			fmt.Print(fmt.Printf("    shape.m_prevVertex.Set(%.15f, %.15f);\n", s.M_prevVertex.X, s.M_prevVertex.Y))
 			fmt.Print(fmt.Printf("    shape.m_nextVertex.Set(%.15f, %.15f);\n", s.M_nextVertex.X, s.M_nextVertex.Y))
-			fmt.Print(fmt.Printf("    shape.m_hasPrevVertex = bool(%v);\n", s.M_hasPrevVertex))
-			fmt.Print(fmt.Printf("    shape.m_hasNextVertex = bool(%v);\n", s.M_hasNextVertex))
 		}
 		break
 

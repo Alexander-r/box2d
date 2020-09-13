@@ -1010,6 +1010,12 @@ func (world *B2World) RayCast(callback B2RaycastCallback, point1 B2Vec2, point2 
 // 			b2Vec2 v1 = b2Mul(xf, edge.m_vertex1);
 // 			b2Vec2 v2 = b2Mul(xf, edge.m_vertex2);
 // 			g_debugDraw.DrawSegment(v1, v2, color);
+
+// 			if (edge->m_oneSided == false)
+// 			{
+// 			    m_debugDraw->DrawPoint(v1, 4.0f, color);
+// 			    m_debugDraw->DrawPoint(v2, 4.0f, color);
+// 			}
 // 		}
 // 		break;
 
@@ -1019,31 +1025,13 @@ func (world *B2World) RayCast(callback B2RaycastCallback, point1 B2Vec2, point2 
 // 			int count = chain.m_count;
 // 			const b2Vec2* vertices = chain.m_vertices;
 
-// 			b2Color ghostColor(0.75f * color.r, 0.75f * color.g, 0.75f * color.b, color.a);
-
 // 			b2Vec2 v1 = b2Mul(xf, vertices[0]);
-// 			g_debugDraw.DrawPoint(v1, 4.0, color);
-
-// 			if (chain.m_hasPrevVertex)
-// 			{
-// 				b2Vec2 vp = b2Mul(xf, chain.m_prevVertex);
-// 				g_debugDraw.DrawSegment(vp, v1, ghostColor);
-// 				g_debugDraw.DrawCircle(vp, 0.1f, ghostColor);
-// 			}
 
 // 			for (int i = 1; i < count; ++i)
 // 			{
 // 				b2Vec2 v2 = b2Mul(xf, vertices[i]);
 // 				g_debugDraw.DrawSegment(v1, v2, color);
-// 				g_debugDraw.DrawPoint(v2, 4.0, color);
 // 				v1 = v2;
-// 			}
-
-// 			if (chain.m_hasNextVertex)
-// 			{
-// 				b2Vec2 vn = b2Mul(xf, chain.m_nextVertex);
-// 				g_debugDraw.DrawSegment(v1, vn, ghostColor);
-// 				g_debugDraw.DrawCircle(vn, 0.1f, ghostColor);
 // 			}
 // 		}
 // 		break;

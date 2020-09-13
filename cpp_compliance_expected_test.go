@@ -272,7 +272,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 22(04_edgeloopsquare): 0.000 0.000 0.000
 22(05_edgelooppoly): -10.000 4.000 0.000
 22(06_squarecharacter1): -3.000 7.233 0.000
-22(07_squarecharacter2): -5.000 4.265 0.000
+22(07_squarecharacter2): -5.000 4.233 0.000
 22(08_hexagoncharacter): -5.000 7.233 0.000
 22(09_circlecharacter1): 3.000 4.505 0.000
 22(10_circlecharacter2): -6.854 5.712 -0.658
@@ -283,7 +283,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 23(04_edgeloopsquare): 0.000 0.000 0.000
 23(05_edgelooppoly): -10.000 4.000 0.000
 23(06_squarecharacter1): -3.000 7.167 0.000
-23(07_squarecharacter2): -5.000 4.265 0.000
+23(07_squarecharacter2): -5.000 4.167 0.000
 23(08_hexagoncharacter): -5.000 7.167 0.000
 23(09_circlecharacter1): 3.000 4.505 0.000
 23(10_circlecharacter2): -6.836 5.703 -0.738
@@ -294,7 +294,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 24(04_edgeloopsquare): 0.000 0.000 0.000
 24(05_edgelooppoly): -10.000 4.000 0.000
 24(06_squarecharacter1): -3.000 7.097 0.000
-24(07_squarecharacter2): -5.000 4.265 0.000
+24(07_squarecharacter2): -5.000 4.097 0.000
 24(08_hexagoncharacter): -5.000 7.097 0.000
 24(09_circlecharacter1): 3.000 4.505 0.000
 24(10_circlecharacter2): -6.818 5.694 -0.821
@@ -305,7 +305,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 25(04_edgeloopsquare): 0.000 0.000 0.000
 25(05_edgelooppoly): -10.000 4.000 0.000
 25(06_squarecharacter1): -3.000 7.025 0.000
-25(07_squarecharacter2): -5.000 4.265 0.000
+25(07_squarecharacter2): -5.000 4.025 0.000
 25(08_hexagoncharacter): -5.000 7.025 0.000
 25(09_circlecharacter1): 3.000 4.505 0.000
 25(10_circlecharacter2): -6.799 5.684 -0.907
@@ -316,7 +316,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 26(04_edgeloopsquare): 0.000 0.000 0.000
 26(05_edgelooppoly): -10.000 4.000 0.000
 26(06_squarecharacter1): -3.000 6.950 0.000
-26(07_squarecharacter2): -5.000 4.265 0.000
+26(07_squarecharacter2): -5.000 3.950 0.000
 26(08_hexagoncharacter): -5.000 6.950 0.000
 26(09_circlecharacter1): 3.000 4.505 0.000
 26(10_circlecharacter2): -6.779 5.674 -0.997
@@ -327,7 +327,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 27(04_edgeloopsquare): 0.000 0.000 0.000
 27(05_edgelooppoly): -10.000 4.000 0.000
 27(06_squarecharacter1): -3.000 6.872 0.000
-27(07_squarecharacter2): -5.000 4.265 0.000
+27(07_squarecharacter2): -5.000 3.771 0.000
 27(08_hexagoncharacter): -5.000 6.872 0.000
 27(09_circlecharacter1): 3.000 4.505 0.000
 27(10_circlecharacter2): -6.758 5.664 -1.090
@@ -338,7 +338,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 28(04_edgeloopsquare): 0.000 0.000 0.000
 28(05_edgelooppoly): -10.000 4.000 0.000
 28(06_squarecharacter1): -3.000 6.792 0.000
-28(07_squarecharacter2): -5.000 4.265 0.000
+28(07_squarecharacter2): -5.000 3.690 0.000
 28(08_hexagoncharacter): -5.000 6.792 0.000
 28(09_circlecharacter1): 3.000 4.505 0.000
 28(10_circlecharacter2): -6.737 5.654 -1.186
@@ -349,7 +349,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 29(04_edgeloopsquare): 0.000 0.000 0.000
 29(05_edgelooppoly): -10.000 4.000 0.000
 29(06_squarecharacter1): -3.000 6.708 0.000
-29(07_squarecharacter2): -5.000 4.265 0.000
+29(07_squarecharacter2): -5.000 3.607 0.000
 29(08_hexagoncharacter): -5.000 6.708 0.000
 29(09_circlecharacter1): 3.000 4.505 0.000
 29(10_circlecharacter2): -6.715 5.642 -1.286
@@ -360,7 +360,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 30(04_edgeloopsquare): 0.000 0.000 0.000
 30(05_edgelooppoly): -10.000 4.000 0.000
 30(06_squarecharacter1): -3.000 6.622 0.000
-30(07_squarecharacter2): -5.000 4.265 0.000
+30(07_squarecharacter2): -5.000 3.521 0.000
 30(08_hexagoncharacter): -5.000 6.622 0.000
 30(09_circlecharacter1): 3.000 4.505 0.000
 30(10_circlecharacter2): -6.692 5.631 -1.389
@@ -371,7 +371,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 31(04_edgeloopsquare): 0.000 0.000 0.000
 31(05_edgelooppoly): -10.000 4.000 0.000
 31(06_squarecharacter1): -3.000 6.533 0.000
-31(07_squarecharacter2): -5.000 4.265 0.000
+31(07_squarecharacter2): -5.000 3.432 0.000
 31(08_hexagoncharacter): -5.000 6.533 0.000
 31(09_circlecharacter1): 3.000 4.505 0.000
 31(10_circlecharacter2): -6.669 5.619 -1.495
@@ -382,7 +382,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 32(04_edgeloopsquare): 0.000 0.000 0.000
 32(05_edgelooppoly): -10.000 4.000 0.000
 32(06_squarecharacter1): -3.000 6.442 0.000
-32(07_squarecharacter2): -5.000 4.265 0.000
+32(07_squarecharacter2): -5.000 3.340 0.000
 32(08_hexagoncharacter): -5.000 6.442 0.000
 32(09_circlecharacter1): 3.000 4.505 0.000
 32(10_circlecharacter2): -6.644 5.607 -1.605
@@ -393,7 +393,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 33(04_edgeloopsquare): 0.000 0.000 0.000
 33(05_edgelooppoly): -10.000 4.000 0.000
 33(06_squarecharacter1): -3.000 6.347 0.000
-33(07_squarecharacter2): -5.000 4.265 0.000
+33(07_squarecharacter2): -5.000 3.246 0.000
 33(08_hexagoncharacter): -5.000 6.347 0.000
 33(09_circlecharacter1): 3.000 4.505 0.000
 33(10_circlecharacter2): -6.619 5.595 -1.718
@@ -404,7 +404,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 34(04_edgeloopsquare): 0.000 0.000 0.000
 34(05_edgelooppoly): -10.000 4.000 0.000
 34(06_squarecharacter1): -3.000 6.250 0.000
-34(07_squarecharacter2): -5.000 4.265 0.000
+34(07_squarecharacter2): -5.000 3.149 0.000
 34(08_hexagoncharacter): -5.000 6.250 0.000
 34(09_circlecharacter1): 3.000 4.505 0.000
 34(10_circlecharacter2): -6.594 5.582 -1.834
@@ -415,7 +415,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 35(04_edgeloopsquare): 0.000 0.000 0.000
 35(05_edgelooppoly): -10.000 4.000 0.000
 35(06_squarecharacter1): -3.000 6.150 0.000
-35(07_squarecharacter2): -5.000 4.265 0.000
+35(07_squarecharacter2): -5.000 3.049 0.000
 35(08_hexagoncharacter): -5.000 6.150 0.000
 35(09_circlecharacter1): 3.000 4.505 0.000
 35(10_circlecharacter2): -6.567 5.569 -1.954
@@ -426,7 +426,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 36(04_edgeloopsquare): 0.000 0.000 0.000
 36(05_edgelooppoly): -10.000 4.000 0.000
 36(06_squarecharacter1): -3.000 6.047 0.000
-36(07_squarecharacter2): -5.000 4.265 0.000
+36(07_squarecharacter2): -5.000 2.946 0.000
 36(08_hexagoncharacter): -5.008 6.070 0.000
 36(09_circlecharacter1): 3.000 4.505 0.000
 36(10_circlecharacter2): -6.540 5.555 -2.076
@@ -437,7 +437,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 37(04_edgeloopsquare): 0.000 0.000 0.000
 37(05_edgelooppoly): -10.000 4.000 0.000
 37(06_squarecharacter1): -3.000 5.942 0.000
-37(07_squarecharacter2): -5.000 4.265 0.000
+37(07_squarecharacter2): -5.000 2.840 0.000
 37(08_hexagoncharacter): -5.034 6.058 0.000
 37(09_circlecharacter1): 3.000 4.505 0.000
 37(10_circlecharacter2): -6.512 5.541 -2.203
@@ -448,7 +448,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 38(04_edgeloopsquare): 0.000 0.000 0.000
 38(05_edgelooppoly): -10.000 4.000 0.000
 38(06_squarecharacter1): -3.000 5.833 0.000
-38(07_squarecharacter2): -5.000 4.265 0.000
+38(07_squarecharacter2): -5.000 2.732 0.000
 38(08_hexagoncharacter): -5.060 6.045 0.000
 38(09_circlecharacter1): 3.000 4.505 0.000
 38(10_circlecharacter2): -6.483 5.527 -2.332
@@ -459,7 +459,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 39(04_edgeloopsquare): 0.000 0.000 0.000
 39(05_edgelooppoly): -10.000 4.000 0.000
 39(06_squarecharacter1): -3.000 5.722 0.000
-39(07_squarecharacter2): -5.000 4.265 0.000
+39(07_squarecharacter2): -5.000 2.621 0.000
 39(08_hexagoncharacter): -5.086 6.032 0.000
 39(09_circlecharacter1): 3.000 4.505 0.000
 39(10_circlecharacter2): -6.454 5.512 -2.465
@@ -470,7 +470,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 40(04_edgeloopsquare): 0.000 0.000 0.000
 40(05_edgelooppoly): -10.000 4.000 0.000
 40(06_squarecharacter1): -3.000 5.608 0.000
-40(07_squarecharacter2): -5.000 4.265 0.000
+40(07_squarecharacter2): -5.000 2.507 0.000
 40(08_hexagoncharacter): -5.114 6.018 0.000
 40(09_circlecharacter1): 3.000 4.505 0.000
 40(10_circlecharacter2): -6.424 5.497 -2.601
@@ -481,7 +481,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 41(04_edgeloopsquare): 0.000 0.000 0.000
 41(05_edgelooppoly): -10.000 4.000 0.000
 41(06_squarecharacter1): -3.000 5.492 0.000
-41(07_squarecharacter2): -5.000 4.265 0.000
+41(07_squarecharacter2): -5.000 2.390 0.000
 41(08_hexagoncharacter): -5.142 6.004 0.000
 41(09_circlecharacter1): 3.000 4.505 0.000
 41(10_circlecharacter2): -6.393 5.481 -2.741
@@ -492,7 +492,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 42(04_edgeloopsquare): 0.000 0.000 0.000
 42(05_edgelooppoly): -10.000 4.000 0.000
 42(06_squarecharacter1): -3.000 5.372 0.000
-42(07_squarecharacter2): -5.000 4.265 0.000
+42(07_squarecharacter2): -5.000 2.271 0.000
 42(08_hexagoncharacter): -5.170 5.990 0.000
 42(09_circlecharacter1): 3.000 4.505 0.000
 42(10_circlecharacter2): -6.361 5.466 -2.884
@@ -503,7 +503,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 43(04_edgeloopsquare): 0.000 0.000 0.000
 43(05_edgelooppoly): -10.000 4.000 0.000
 43(06_squarecharacter1): -3.000 5.250 0.000
-43(07_squarecharacter2): -5.000 4.265 0.000
+43(07_squarecharacter2): -5.000 2.149 0.000
 43(08_hexagoncharacter): -5.200 5.975 0.000
 43(09_circlecharacter1): 3.000 4.505 0.000
 43(10_circlecharacter2): -6.329 5.449 -3.030
@@ -514,7 +514,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 44(04_edgeloopsquare): 0.000 0.000 0.000
 44(05_edgelooppoly): -10.000 4.000 0.000
 44(06_squarecharacter1): -3.000 5.125 0.000
-44(07_squarecharacter2): -5.000 4.265 0.000
+44(07_squarecharacter2): -5.000 2.024 0.000
 44(08_hexagoncharacter): -5.230 5.960 0.000
 44(09_circlecharacter1): 3.000 4.505 0.000
 44(10_circlecharacter2): -6.296 5.433 -3.179
@@ -525,7 +525,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 45(04_edgeloopsquare): 0.000 0.000 0.000
 45(05_edgelooppoly): -10.000 4.000 0.000
 45(06_squarecharacter1): -3.000 4.997 0.000
-45(07_squarecharacter2): -5.000 4.265 0.000
+45(07_squarecharacter2): -5.000 1.896 0.000
 45(08_hexagoncharacter): -5.260 5.945 0.000
 45(09_circlecharacter1): 3.000 4.505 0.000
 45(10_circlecharacter2): -6.262 5.416 -3.332
@@ -536,7 +536,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 46(04_edgeloopsquare): 0.000 0.000 0.000
 46(05_edgelooppoly): -10.000 4.000 0.000
 46(06_squarecharacter1): -3.000 4.867 0.000
-46(07_squarecharacter2): -5.000 4.265 0.000
+46(07_squarecharacter2): -5.000 1.765 0.000
 46(08_hexagoncharacter): -5.292 5.929 0.000
 46(09_circlecharacter1): 3.000 4.505 0.000
 46(10_circlecharacter2): -6.227 5.399 -3.488
@@ -547,7 +547,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 47(04_edgeloopsquare): 0.000 0.000 0.000
 47(05_edgelooppoly): -10.000 4.000 0.000
 47(06_squarecharacter1): -3.000 4.733 0.000
-47(07_squarecharacter2): -5.000 4.265 0.000
+47(07_squarecharacter2): -5.000 1.632 0.000
 47(08_hexagoncharacter): -5.324 5.913 0.000
 47(09_circlecharacter1): 3.000 4.505 0.000
 47(10_circlecharacter2): -6.192 5.381 -3.648
@@ -558,7 +558,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 48(04_edgeloopsquare): 0.000 0.000 0.000
 48(05_edgelooppoly): -10.000 4.000 0.000
 48(06_squarecharacter1): -3.000 4.597 0.000
-48(07_squarecharacter2): -5.000 4.265 0.000
+48(07_squarecharacter2): -5.000 1.496 0.000
 48(08_hexagoncharacter): -5.356 5.897 0.000
 48(09_circlecharacter1): 3.000 4.505 0.000
 48(10_circlecharacter2): -6.156 5.363 -3.811
@@ -569,7 +569,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 49(04_edgeloopsquare): 0.000 0.000 0.000
 49(05_edgelooppoly): -10.000 4.000 0.000
 49(06_squarecharacter1): -3.000 4.458 0.000
-49(07_squarecharacter2): -5.000 4.265 0.000
+49(07_squarecharacter2): -5.000 1.357 0.000
 49(08_hexagoncharacter): -5.390 5.880 0.000
 49(09_circlecharacter1): 3.000 4.505 0.000
 49(10_circlecharacter2): -6.119 5.345 -3.977
@@ -580,7 +580,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 50(04_edgeloopsquare): 0.000 0.000 0.000
 50(05_edgelooppoly): -10.000 4.000 0.000
 50(06_squarecharacter1): -3.000 4.317 0.000
-50(07_squarecharacter2): -5.000 4.265 0.000
+50(07_squarecharacter2): -5.000 1.265 0.000
 50(08_hexagoncharacter): -5.424 5.863 0.000
 50(09_circlecharacter1): 3.000 4.505 0.000
 50(10_circlecharacter2): -6.082 5.326 -4.146
@@ -591,7 +591,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 51(04_edgeloopsquare): 0.000 0.000 0.000
 51(05_edgelooppoly): -10.000 4.000 0.000
 51(06_squarecharacter1): -3.000 4.172 0.000
-51(07_squarecharacter2): -5.000 4.265 0.000
+51(07_squarecharacter2): -5.000 1.265 0.000
 51(08_hexagoncharacter): -5.458 5.846 0.000
 51(09_circlecharacter1): 3.000 4.505 0.000
 51(10_circlecharacter2): -6.043 5.307 -4.319
@@ -602,7 +602,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 52(04_edgeloopsquare): 0.000 0.000 0.000
 52(05_edgelooppoly): -10.000 4.000 0.000
 52(06_squarecharacter1): -3.000 4.025 0.000
-52(07_squarecharacter2): -5.000 4.265 0.000
+52(07_squarecharacter2): -5.000 1.265 0.000
 52(08_hexagoncharacter): -5.494 5.828 0.000
 52(09_circlecharacter1): 3.000 4.505 0.000
 52(10_circlecharacter2): -6.004 5.287 -4.495
@@ -613,7 +613,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 53(04_edgeloopsquare): 0.000 0.000 0.000
 53(05_edgelooppoly): -10.000 4.000 0.000
 53(06_squarecharacter1): -3.000 3.875 0.000
-53(07_squarecharacter2): -5.000 4.265 0.000
+53(07_squarecharacter2): -5.000 1.265 0.000
 53(08_hexagoncharacter): -5.530 5.810 0.000
 53(09_circlecharacter1): 3.000 4.505 0.000
 53(10_circlecharacter2): -5.976 5.301 -4.620
@@ -624,7 +624,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 54(04_edgeloopsquare): 0.000 0.000 0.000
 54(05_edgelooppoly): -10.000 4.000 0.000
 54(06_squarecharacter1): -3.000 3.722 0.000
-54(07_squarecharacter2): -5.000 4.265 0.000
+54(07_squarecharacter2): -5.000 1.265 0.000
 54(08_hexagoncharacter): -5.547 5.802 0.000
 54(09_circlecharacter1): 3.000 4.505 0.000
 54(10_circlecharacter2): -6.017 5.288 -4.653
@@ -635,7 +635,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 55(04_edgeloopsquare): 0.000 0.000 0.000
 55(05_edgelooppoly): -10.000 4.000 0.000
 55(06_squarecharacter1): -3.000 3.567 0.000
-55(07_squarecharacter2): -5.000 4.265 0.000
+55(07_squarecharacter2): -5.000 1.265 0.000
 55(08_hexagoncharacter): -5.554 5.804 0.000
 55(09_circlecharacter1): 3.000 4.505 0.000
 55(10_circlecharacter2): -6.029 5.290 -4.630
@@ -646,7 +646,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 56(04_edgeloopsquare): 0.000 0.000 0.000
 56(05_edgelooppoly): -10.000 4.000 0.000
 56(06_squarecharacter1): -3.000 3.408 0.000
-56(07_squarecharacter2): -5.000 4.265 0.000
+56(07_squarecharacter2): -5.000 1.265 0.000
 56(08_hexagoncharacter): -5.555 5.811 0.000
 56(09_circlecharacter1): 3.000 4.505 0.000
 56(10_circlecharacter2): -6.035 5.293 -4.619
@@ -657,7 +657,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 57(04_edgeloopsquare): 0.000 0.000 0.000
 57(05_edgelooppoly): -10.000 4.000 0.000
 57(06_squarecharacter1): -3.000 3.247 0.000
-57(07_squarecharacter2): -5.000 4.265 0.000
+57(07_squarecharacter2): -5.000 1.265 0.000
 57(08_hexagoncharacter): -5.555 5.816 0.000
 57(09_circlecharacter1): 3.000 4.505 0.000
 57(10_circlecharacter2): -6.038 5.297 -4.612
@@ -668,7 +668,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 58(04_edgeloopsquare): 0.000 0.000 0.000
 58(05_edgelooppoly): -10.000 4.000 0.000
 58(06_squarecharacter1): -3.000 3.083 0.000
-58(07_squarecharacter2): -5.000 4.265 0.000
+58(07_squarecharacter2): -5.000 1.265 0.000
 58(08_hexagoncharacter): -5.556 5.818 0.000
 58(09_circlecharacter1): 3.000 4.505 0.000
 58(10_circlecharacter2): -6.040 5.298 -4.607
@@ -679,7 +679,7 @@ var expected string = `0(00_ground): 0.000 0.000 0.000
 59(04_edgeloopsquare): 0.000 0.000 0.000
 59(05_edgelooppoly): -10.000 4.000 0.000
 59(06_squarecharacter1): -3.000 2.917 0.000
-59(07_squarecharacter2): -5.000 4.265 0.000
+59(07_squarecharacter2): -5.000 1.265 0.000
 59(08_hexagoncharacter): -5.556 5.818 0.000
 59(09_circlecharacter1): 3.000 4.505 0.000
 59(10_circlecharacter2): -6.041 5.299 -4.606

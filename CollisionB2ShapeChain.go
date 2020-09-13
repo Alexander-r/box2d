@@ -1,11 +1,10 @@
 package box2d
 
 /// A chain shape is a free form sequence of line segments.
-/// The chain has two-sided collision, so you can use inside and outside collision.
-/// Therefore, you may use any winding order.
-/// Since there may be many vertices, they are allocated using b2Alloc.
+/// The chain has one-sided collision, with the surface normal pointing to the right of the edge.
+/// This provides a counter-clockwise winding like the polygon shape.
 /// Connectivity information is used to create smooth collisions.
-/// WARNING: The chain will not collide properly if there are self-intersections.
+/// @warning the chain will not collide properly if there are self-intersections.
 
 /// A circle shape.
 type B2ChainShape struct {
@@ -17,10 +16,8 @@ type B2ChainShape struct {
 	/// The vertex count.
 	M_count int
 
-	M_prevVertex    B2Vec2
-	M_nextVertex    B2Vec2
-	M_hasPrevVertex bool
-	M_hasNextVertex bool
+	M_prevVertex B2Vec2
+	M_nextVertex B2Vec2
 }
 
 func MakeB2ChainShape() B2ChainShape {
@@ -29,10 +26,8 @@ func MakeB2ChainShape() B2ChainShape {
 			M_type:   B2Shape_Type.E_chain,
 			M_radius: B2_polygonRadius,
 		},
-		M_vertices:      nil,
-		M_count:         0,
-		M_hasPrevVertex: false,
-		M_hasNextVertex: false,
+		M_vertices: nil,
+		M_count:    0,
 	}
 }
 
@@ -53,6 +48,9 @@ func (chain *B2ChainShape) Clear() {
 	chain.M_count = 0
 }
 
+/// Create a loop. This automatically adjusts connectivity.
+/// @param vertices an array of vertices, these are copied
+/// @param count the vertex count
 func (chain *B2ChainShape) CreateLoop(vertices []B2Vec2, count int) {
 	B2Assert(chain.M_vertices == nil && chain.M_count == 0)
 	B2Assert(count >= 3)
@@ -76,11 +74,14 @@ func (chain *B2ChainShape) CreateLoop(vertices []B2Vec2, count int) {
 	chain.M_vertices[count] = chain.M_vertices[0]
 	chain.M_prevVertex = chain.M_vertices[chain.M_count-2]
 	chain.M_nextVertex = chain.M_vertices[1]
-	chain.M_hasPrevVertex = true
-	chain.M_hasNextVertex = true
 }
 
-func (chain *B2ChainShape) CreateChain(vertices []B2Vec2, count int) {
+/// Create a chain with ghost vertices to connect multiple chains together.
+/// @param vertices an array of vertices, these are copied
+/// @param count the vertex count
+/// @param prevVertex previous vertex from chain that connects to the start
+/// @param nextVertex next vertex from chain that connects to the end
+func (chain *B2ChainShape) CreateChain(vertices []B2Vec2, count int, prevVertex B2Vec2, nextVertex B2Vec2) {
 	B2Assert(chain.M_vertices == nil && chain.M_count == 0)
 	B2Assert(count >= 2)
 	for i := 1; i < count; i++ {
@@ -94,32 +95,13 @@ func (chain *B2ChainShape) CreateChain(vertices []B2Vec2, count int) {
 		chain.M_vertices[i] = vertice
 	}
 
-	chain.M_hasPrevVertex = false
-	chain.M_hasNextVertex = false
-
-	chain.M_prevVertex.SetZero()
-	chain.M_nextVertex.SetZero()
-}
-
-func (chain *B2ChainShape) SetPrevVertex(prevVertex B2Vec2) {
 	chain.M_prevVertex = prevVertex
-	chain.M_hasPrevVertex = true
-}
-
-func (chain *B2ChainShape) SetNextVertex(nextVertex B2Vec2) {
 	chain.M_nextVertex = nextVertex
-	chain.M_hasNextVertex = true
 }
 
 func (chain B2ChainShape) Clone() B2ShapeInterface {
-
 	clone := MakeB2ChainShape()
-	clone.CreateChain(chain.M_vertices, chain.M_count)
-	clone.M_prevVertex = chain.M_prevVertex
-	clone.M_nextVertex = chain.M_nextVertex
-	clone.M_hasPrevVertex = chain.M_hasPrevVertex
-	clone.M_hasNextVertex = chain.M_hasNextVertex
-
+	clone.CreateChain(chain.M_vertices, chain.M_count, chain.M_prevVertex, chain.M_nextVertex)
 	return &clone
 }
 
@@ -136,21 +118,18 @@ func (chain B2ChainShape) GetChildEdge(edge *B2EdgeShape, index int) {
 
 	edge.M_vertex1 = chain.M_vertices[index+0]
 	edge.M_vertex2 = chain.M_vertices[index+1]
+	edge.M_oneSided = true
 
 	if index > 0 {
 		edge.M_vertex0 = chain.M_vertices[index-1]
-		edge.M_hasVertex0 = true
 	} else {
 		edge.M_vertex0 = chain.M_prevVertex
-		edge.M_hasVertex0 = chain.M_hasPrevVertex
 	}
 
 	if index < chain.M_count-2 {
 		edge.M_vertex3 = chain.M_vertices[index+2]
-		edge.M_hasVertex3 = true
 	} else {
 		edge.M_vertex3 = chain.M_nextVertex
-		edge.M_hasVertex3 = chain.M_hasNextVertex
 	}
 }
 
