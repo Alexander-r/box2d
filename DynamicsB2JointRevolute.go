@@ -567,4 +567,9 @@ func (joint *B2RevoluteJoint) Dump() {
 //		draw->DrawSegment(pB, pB + rlo, c2);
 //		draw->DrawSegment(pB, pB + rhi, c3);
 //	}
+//
+//	b2Color color(0.5f, 0.8f, 0.8f);
+//	draw->DrawSegment(xfA.p, pA, color);
+//	draw->DrawSegment(pA, pB, color);
+//	draw->DrawSegment(xfB.p, pB, color);
 //}
