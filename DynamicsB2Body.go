@@ -292,6 +292,10 @@ func (body B2Body) IsBullet() bool {
 }
 
 func (body *B2Body) SetAwake(flag bool) {
+	if body.M_type == B2BodyType.B2_staticBody {
+		return
+	}
+
 	if flag {
 		body.M_flags |= B2Body_Flags.E_awakeFlag
 		body.M_sleepTime = 0.0
@@ -502,7 +506,7 @@ func NewB2Body(bd *B2BodyDef, world *B2World) *B2Body {
 		body.M_flags |= B2Body_Flags.E_autoSleepFlag
 	}
 
-	if bd.Awake {
+	if bd.Awake && bd.Type != B2BodyType.B2_staticBody {
 		body.M_flags |= B2Body_Flags.E_awakeFlag
 	}
 
@@ -575,6 +579,7 @@ func (body *B2Body) SetType(bodytype uint8) {
 		body.M_angularVelocity = 0.0
 		body.M_sweep.A0 = body.M_sweep.A
 		body.M_sweep.C0 = body.M_sweep.C
+		body.M_flags &= ^B2Body_Flags.E_awakeFlag
 		body.SynchronizeFixtures()
 	}
 
