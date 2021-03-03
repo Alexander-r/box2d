@@ -215,6 +215,7 @@ func MakeB2PrismaticJoint(def *B2PrismaticJointDef) *B2PrismaticJoint {
 	res.M_enableLimit = def.EnableLimit
 	res.M_enableMotor = def.EnableMotor
 
+	res.M_translation = 0.0
 	res.M_axis.SetZero()
 	res.M_perp.SetZero()
 

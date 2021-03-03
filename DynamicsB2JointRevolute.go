@@ -5,12 +5,11 @@ import (
 	"math"
 )
 
-/// Revolute joint definition. This requires defining an
-/// anchor point where the bodies are joined. The definition
-/// uses local anchor points so that the initial configuration
-/// can violate the constraint slightly. You also need to
-/// specify the initial relative angle for joint limits. This
-/// helps when saving and loading a game.
+/// Revolute joint definition. This requires defining an anchor point where the
+/// bodies are joined. The definition uses local anchor points so that the
+/// initial configuration can violate the constraint slightly. You also need to
+/// specify the initial relative angle for joint limits. This helps when saving
+/// and loading a game.
 /// The local anchor points are measured from the body's origin
 /// rather than the center of mass because:
 /// 1. you might not know where the center of mass will be.
@@ -77,15 +76,15 @@ type B2RevoluteJoint struct {
 	*B2Joint
 
 	// Solver shared
-	M_localAnchorA B2Vec2
-	M_localAnchorB B2Vec2
-	M_impulse      B2Vec3
-	M_motorImpulse float64
-
+	M_localAnchorA   B2Vec2
+	M_localAnchorB   B2Vec2
+	M_impulse        B2Vec2
+	M_motorImpulse   float64
+	M_lowerImpulse   float64
+	M_upperImpulse   float64
 	M_enableMotor    bool
 	M_maxMotorTorque float64
 	M_motorSpeed     float64
-
 	M_enableLimit    bool
 	M_referenceAngle float64
 	M_lowerAngle     float64
@@ -102,9 +101,9 @@ type B2RevoluteJoint struct {
 	M_invMassB     float64
 	M_invIA        float64
 	M_invIB        float64
-	M_mass         B2Mat33 // effective mass for point-to-point constraint.
-	M_motorMass    float64 // effective mass for motor/limit angular constraint.
-	M_limitState   uint8
+	M_K            B2Mat22
+	M_angle        float64
+	M_axialMass    float64
 }
 
 /// The local anchor point relative to bodyA's origin.
@@ -161,7 +160,10 @@ func MakeB2RevoluteJoint(def *B2RevoluteJointDef) *B2RevoluteJoint {
 	res.M_referenceAngle = def.ReferenceAngle
 
 	res.M_impulse.SetZero()
+	res.M_axialMass = 0.0
 	res.M_motorImpulse = 0.0
+	res.M_lowerImpulse = 0.0
+	res.M_upperImpulse = 0.0
 
 	res.M_lowerAngle = def.LowerAngle
 	res.M_upperAngle = def.UpperAngle
@@ -169,7 +171,8 @@ func MakeB2RevoluteJoint(def *B2RevoluteJointDef) *B2RevoluteJoint {
 	res.M_motorSpeed = def.MotorSpeed
 	res.M_enableLimit = def.EnableLimit
 	res.M_enableMotor = def.EnableMotor
-	res.M_limitState = B2LimitState.E_inactiveLimit
+
+	res.M_angle = 0.0
 
 	return &res
 }
@@ -199,77 +202,61 @@ func (joint *B2RevoluteJoint) InitVelocityConstraints(data B2SolverData) {
 	joint.M_rB = B2RotVec2Mul(qB, B2Vec2Sub(joint.M_localAnchorB, joint.M_localCenterB))
 
 	// J = [-I -r1_skew I r2_skew]
-	//     [ 0       -1 0       1]
 	// r_skew = [-ry; rx]
 
 	// Matlab
-	// K = [ mA+r1y^2*iA+mB+r2y^2*iB,  -r1y*iA*r1x-r2y*iB*r2x,          -r1y*iA-r2y*iB]
-	//     [  -r1y*iA*r1x-r2y*iB*r2x, mA+r1x^2*iA+mB+r2x^2*iB,           r1x*iA+r2x*iB]
-	//     [          -r1y*iA-r2y*iB,           r1x*iA+r2x*iB,                   iA+iB]
+	// K = [ mA+r1y^2*iA+mB+r2y^2*iB,  -r1y*iA*r1x-r2y*iB*r2x]
+	//     [  -r1y*iA*r1x-r2y*iB*r2x, mA+r1x^2*iA+mB+r2x^2*iB]
 
 	mA := joint.M_invMassA
 	mB := joint.M_invMassB
 	iA := joint.M_invIA
 	iB := joint.M_invIB
 
-	fixedRotation := (iA+iB == 0.0)
+	joint.M_K.Ex.X = mA + mB + joint.M_rA.Y*joint.M_rA.Y*iA + joint.M_rB.Y*joint.M_rB.Y*iB
+	joint.M_K.Ey.X = -joint.M_rA.Y*joint.M_rA.X*iA - joint.M_rB.Y*joint.M_rB.X*iB
+	joint.M_K.Ex.Y = joint.M_K.Ey.X
+	joint.M_K.Ey.Y = mA + mB + joint.M_rA.X*joint.M_rA.X*iA + joint.M_rB.X*joint.M_rB.X*iB
 
-	joint.M_mass.Ex.X = mA + mB + joint.M_rA.Y*joint.M_rA.Y*iA + joint.M_rB.Y*joint.M_rB.Y*iB
-	joint.M_mass.Ey.X = -joint.M_rA.Y*joint.M_rA.X*iA - joint.M_rB.Y*joint.M_rB.X*iB
-	joint.M_mass.Ez.X = -joint.M_rA.Y*iA - joint.M_rB.Y*iB
-	joint.M_mass.Ex.Y = joint.M_mass.Ey.X
-	joint.M_mass.Ey.Y = mA + mB + joint.M_rA.X*joint.M_rA.X*iA + joint.M_rB.X*joint.M_rB.X*iB
-	joint.M_mass.Ez.Y = joint.M_rA.X*iA + joint.M_rB.X*iB
-	joint.M_mass.Ex.Z = joint.M_mass.Ez.X
-	joint.M_mass.Ey.Z = joint.M_mass.Ez.Y
-	joint.M_mass.Ez.Z = iA + iB
+	joint.M_axialMass = iA + iB
+	var fixedRotation bool
+	if joint.M_axialMass > 0.0 {
+		joint.M_axialMass = 1.0 / joint.M_axialMass
+		fixedRotation = false
+	} else {
+		fixedRotation = true
+	}
 
-	joint.M_motorMass = iA + iB
-	if joint.M_motorMass > 0.0 {
-		joint.M_motorMass = 1.0 / joint.M_motorMass
+	joint.M_angle = aB - aA - joint.M_referenceAngle
+	if joint.M_enableLimit == false || fixedRotation {
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
 	}
 
 	if joint.M_enableMotor == false || fixedRotation {
 		joint.M_motorImpulse = 0.0
 	}
 
-	if joint.M_enableLimit && fixedRotation == false {
-		jointAngle := aB - aA - joint.M_referenceAngle
-		if math.Abs(joint.M_upperAngle-joint.M_lowerAngle) < 2.0*B2_angularSlop {
-			joint.M_limitState = B2LimitState.E_equalLimits
-		} else if jointAngle <= joint.M_lowerAngle {
-			if joint.M_limitState != B2LimitState.E_atLowerLimit {
-				joint.M_impulse.Z = 0.0
-			}
-			joint.M_limitState = B2LimitState.E_atLowerLimit
-		} else if jointAngle >= joint.M_upperAngle {
-			if joint.M_limitState != B2LimitState.E_atUpperLimit {
-				joint.M_impulse.Z = 0.0
-			}
-			joint.M_limitState = B2LimitState.E_atUpperLimit
-		} else {
-			joint.M_limitState = B2LimitState.E_inactiveLimit
-			joint.M_impulse.Z = 0.0
-		}
-	} else {
-		joint.M_limitState = B2LimitState.E_inactiveLimit
-	}
-
 	if data.Step.WarmStarting {
 		// Scale impulses to support a variable time step.
 		joint.M_impulse.OperatorScalarMulInplace(data.Step.DtRatio)
 		joint.M_motorImpulse *= data.Step.DtRatio
+		joint.M_lowerImpulse *= data.Step.DtRatio
+		joint.M_upperImpulse *= data.Step.DtRatio
 
+		axialImpulse := joint.M_motorImpulse + joint.M_lowerImpulse - joint.M_upperImpulse
 		P := MakeB2Vec2(joint.M_impulse.X, joint.M_impulse.Y)
 
 		vA.OperatorMinusInplace(B2Vec2MulScalar(mA, P))
-		wA -= iA * (B2Vec2Cross(joint.M_rA, P) + joint.M_motorImpulse + joint.M_impulse.Z)
+		wA -= iA * (B2Vec2Cross(joint.M_rA, P) + axialImpulse)
 
 		vB.OperatorPlusInplace(B2Vec2MulScalar(mB, P))
-		wB += iB * (B2Vec2Cross(joint.M_rB, P) + joint.M_motorImpulse + joint.M_impulse.Z)
+		wB += iB * (B2Vec2Cross(joint.M_rB, P) + axialImpulse)
 	} else {
 		joint.M_impulse.SetZero()
 		joint.M_motorImpulse = 0.0
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
 	}
 
 	data.Velocities[joint.M_indexA].V = vA
@@ -292,9 +279,9 @@ func (joint *B2RevoluteJoint) SolveVelocityConstraints(data B2SolverData) {
 	fixedRotation := (iA+iB == 0.0)
 
 	// Solve motor constraint.
-	if joint.M_enableMotor && joint.M_limitState != B2LimitState.E_equalLimits && fixedRotation == false {
+	if joint.M_enableMotor && fixedRotation == false {
 		Cdot := wB - wA - joint.M_motorSpeed
-		impulse := -joint.M_motorMass * Cdot
+		impulse := -joint.M_axialMass * Cdot
 		oldImpulse := joint.M_motorImpulse
 		maxImpulse := data.Step.Dt * joint.M_maxMotorTorque
 		joint.M_motorImpulse = B2FloatClamp(joint.M_motorImpulse+impulse, -maxImpulse, maxImpulse)
@@ -304,57 +291,40 @@ func (joint *B2RevoluteJoint) SolveVelocityConstraints(data B2SolverData) {
 		wB += iB * impulse
 	}
 
-	// Solve limit constraint.
-	if joint.M_enableLimit && joint.M_limitState != B2LimitState.E_inactiveLimit && fixedRotation == false {
-		Cdot1 := B2Vec2Sub(B2Vec2Sub(B2Vec2Add(vB, B2Vec2CrossScalarVector(wB, joint.M_rB)), vA), B2Vec2CrossScalarVector(wA, joint.M_rA))
-		Cdot2 := wB - wA
-		Cdot := MakeB2Vec3(Cdot1.X, Cdot1.Y, Cdot2)
+	if joint.M_enableLimit && fixedRotation == false {
+		// Lower limit
+		{
+			C := joint.M_angle - joint.M_lowerAngle
+			Cdot := wB - wA
+			impulse := -joint.M_axialMass * (Cdot + math.Max(C, 0.0)*data.Step.Inv_dt)
+			oldImpulse := joint.M_lowerImpulse
+			joint.M_lowerImpulse = math.Max(joint.M_lowerImpulse+impulse, 0.0)
+			impulse = joint.M_lowerImpulse - oldImpulse
 
-		impulse := joint.M_mass.Solve33(Cdot).OperatorNegate()
-
-		if joint.M_limitState == B2LimitState.E_equalLimits {
-			joint.M_impulse.OperatorPlusInplace(impulse)
-		} else if joint.M_limitState == B2LimitState.E_atLowerLimit {
-			newImpulse := joint.M_impulse.Z + impulse.Z
-			if newImpulse < 0.0 {
-				rhs := B2Vec2Add(Cdot1.OperatorNegate(), B2Vec2MulScalar(joint.M_impulse.Z, MakeB2Vec2(joint.M_mass.Ez.X, joint.M_mass.Ez.Y)))
-				reduced := joint.M_mass.Solve22(rhs)
-				impulse.X = reduced.X
-				impulse.Y = reduced.Y
-				impulse.Z = -joint.M_impulse.Z
-				joint.M_impulse.X += reduced.X
-				joint.M_impulse.Y += reduced.Y
-				joint.M_impulse.Z = 0.0
-			} else {
-				joint.M_impulse.OperatorPlusInplace(impulse)
-			}
-		} else if joint.M_limitState == B2LimitState.E_atUpperLimit {
-			newImpulse := joint.M_impulse.Z + impulse.Z
-			if newImpulse > 0.0 {
-				rhs := B2Vec2Add(Cdot1.OperatorNegate(), B2Vec2MulScalar(joint.M_impulse.Z, MakeB2Vec2(joint.M_mass.Ez.X, joint.M_mass.Ez.Y)))
-				reduced := joint.M_mass.Solve22(rhs)
-				impulse.X = reduced.X
-				impulse.Y = reduced.Y
-				impulse.Z = -joint.M_impulse.Z
-				joint.M_impulse.X += reduced.X
-				joint.M_impulse.Y += reduced.Y
-				joint.M_impulse.Z = 0.0
-			} else {
-				joint.M_impulse.OperatorPlusInplace(impulse)
-			}
+			wA -= iA * impulse
+			wB += iB * impulse
 		}
 
-		P := MakeB2Vec2(impulse.X, impulse.Y)
+		// Upper limit
+		// Note: signs are flipped to keep C positive when the constraint is satisfied.
+		// This also keeps the impulse positive when the limit is active.
+		{
+			C := joint.M_upperAngle - joint.M_angle
+			Cdot := wA - wB
+			impulse := -joint.M_axialMass * (Cdot + math.Max(C, 0.0)*data.Step.Inv_dt)
+			oldImpulse := joint.M_upperImpulse
+			joint.M_upperImpulse = math.Max(joint.M_upperImpulse+impulse, 0.0)
+			impulse = joint.M_upperImpulse - oldImpulse
 
-		vA.OperatorMinusInplace(B2Vec2MulScalar(mA, P))
-		wA -= iA * (B2Vec2Cross(joint.M_rA, P) + impulse.Z)
+			wA += iA * impulse
+			wB -= iB * impulse
+		}
+	}
 
-		vB.OperatorPlusInplace(B2Vec2MulScalar(mB, P))
-		wB += iB * (B2Vec2Cross(joint.M_rB, P) + impulse.Z)
-	} else {
-		// Solve point-to-point constraint
+	// Solve point-to-point constraint
+	{
 		Cdot := B2Vec2Sub(B2Vec2Sub(B2Vec2Add(vB, B2Vec2CrossScalarVector(wB, joint.M_rB)), vA), B2Vec2CrossScalarVector(wA, joint.M_rA))
-		impulse := joint.M_mass.Solve22(Cdot.OperatorNegate())
+		impulse := joint.M_K.Solve(Cdot.OperatorNegate())
 
 		joint.M_impulse.X += impulse.X
 		joint.M_impulse.Y += impulse.Y
@@ -386,34 +356,27 @@ func (joint *B2RevoluteJoint) SolvePositionConstraints(data B2SolverData) bool {
 
 	fixedRotation := (joint.M_invIA+joint.M_invIB == 0.0)
 
-	// Solve angular limit constraint.
-	if joint.M_enableLimit && joint.M_limitState != B2LimitState.E_inactiveLimit && fixedRotation == false {
+	// Solve angular limit constraint
+	//bool active = false;
+	if joint.M_enableLimit && fixedRotation == false {
 		angle := aB - aA - joint.M_referenceAngle
-		limitImpulse := 0.0
+		C := 0.0
 
-		if joint.M_limitState == B2LimitState.E_equalLimits {
+		if math.Abs(joint.M_upperAngle-joint.M_lowerAngle) < 2.0*B2_angularSlop {
 			// Prevent large angular corrections
-			C := B2FloatClamp(angle-joint.M_lowerAngle, -B2_maxAngularCorrection, B2_maxAngularCorrection)
-			limitImpulse = -joint.M_motorMass * C
-			angularError = math.Abs(C)
-		} else if joint.M_limitState == B2LimitState.E_atLowerLimit {
-			C := angle - joint.M_lowerAngle
-			angularError = -C
-
+			C = B2FloatClamp(angle-joint.M_lowerAngle, -B2_maxAngularCorrection, B2_maxAngularCorrection)
+		} else if angle <= joint.M_lowerAngle {
 			// Prevent large angular corrections and allow some slop.
-			C = B2FloatClamp(C+B2_angularSlop, -B2_maxAngularCorrection, 0.0)
-			limitImpulse = -joint.M_motorMass * C
-		} else if joint.M_limitState == B2LimitState.E_atUpperLimit {
-			C := angle - joint.M_upperAngle
-			angularError = C
-
+			C = B2FloatClamp(angle-joint.M_lowerAngle+B2_angularSlop, -B2_maxAngularCorrection, 0.0)
+		} else if angle >= joint.M_upperAngle {
 			// Prevent large angular corrections and allow some slop.
-			C = B2FloatClamp(C-B2_angularSlop, 0.0, B2_maxAngularCorrection)
-			limitImpulse = -joint.M_motorMass * C
+			C = B2FloatClamp(angle-joint.M_upperAngle-B2_angularSlop, 0.0, B2_maxAngularCorrection)
 		}
 
+		limitImpulse := -joint.M_axialMass * C
 		aA -= joint.M_invIA * limitImpulse
 		aB += joint.M_invIB * limitImpulse
+		angularError = math.Abs(C)
 	}
 
 	// Solve point-to-point constraint.
@@ -468,7 +431,7 @@ func (joint B2RevoluteJoint) GetReactionForce(inv_dt float64) B2Vec2 {
 }
 
 func (joint B2RevoluteJoint) GetReactionTorque(inv_dt float64) float64 {
-	return inv_dt * joint.M_impulse.Z
+	return inv_dt * (joint.M_lowerImpulse + joint.M_upperImpulse)
 }
 
 func (joint B2RevoluteJoint) GetJointAngle() float64 {
@@ -524,7 +487,8 @@ func (joint *B2RevoluteJoint) EnableLimit(flag bool) {
 		joint.M_bodyA.SetAwake(true)
 		joint.M_bodyB.SetAwake(true)
 		joint.M_enableLimit = flag
-		joint.M_impulse.Z = 0.0
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
 	}
 }
 
@@ -542,7 +506,8 @@ func (joint *B2RevoluteJoint) SetLimits(lower float64, upper float64) {
 	if lower != joint.M_lowerAngle || upper != joint.M_upperAngle {
 		joint.M_bodyA.SetAwake(true)
 		joint.M_bodyB.SetAwake(true)
-		joint.M_impulse.Z = 0.0
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
 		joint.M_lowerAngle = lower
 		joint.M_upperAngle = upper
 	}
@@ -567,3 +532,39 @@ func (joint *B2RevoluteJoint) Dump() {
 	fmt.Printf("  jd.maxMotorTorque = %.15f;\n", joint.M_maxMotorTorque)
 	fmt.Printf("  joints[%d] = m_world.CreateJoint(&jd);\n", joint.M_index)
 }
+
+//void b2RevoluteJoint::Draw(b2Draw* draw) const
+//{
+//	const b2Transform& xfA = m_bodyA->GetTransform();
+//	const b2Transform& xfB = m_bodyB->GetTransform();
+//	b2Vec2 pA = b2Mul(xfA, m_localAnchorA);
+//	b2Vec2 pB = b2Mul(xfB, m_localAnchorB);
+//
+//	b2Color c1(0.7f, 0.7f, 0.7f);
+//	b2Color c2(0.3f, 0.9f, 0.3f);
+//	b2Color c3(0.9f, 0.3f, 0.3f);
+//	b2Color c4(0.3f, 0.3f, 0.9f);
+//	b2Color c5(0.4f, 0.4f, 0.4f);
+//
+//	draw->DrawPoint(pA, 5.0f, c4);
+//	draw->DrawPoint(pB, 5.0f, c5);
+//
+//	float aA = m_bodyA->GetAngle();
+//	float aB = m_bodyB->GetAngle();
+//	float angle = aB - aA - m_referenceAngle;
+//
+//	const float L = 0.5f;
+//
+//	b2Vec2 r = L * b2Vec2(cosf(angle), sinf(angle));
+//	draw->DrawSegment(pB, pB + r, c1);
+//	draw->DrawCircle(pB, L, c1);
+//
+//	if (m_enableLimit)
+//	{
+//		b2Vec2 rlo = L * b2Vec2(cosf(m_lowerAngle), sinf(m_lowerAngle));
+//		b2Vec2 rhi = L * b2Vec2(cosf(m_upperAngle), sinf(m_upperAngle));
+//
+//		draw->DrawSegment(pB, pB + rlo, c2);
+//		draw->DrawSegment(pB, pB + rhi, c3);
+//	}
+//}

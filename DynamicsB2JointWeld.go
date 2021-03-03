@@ -20,12 +20,12 @@ type B2WeldJointDef struct {
 	/// The bodyB angle minus bodyA angle in the reference state (radians).
 	ReferenceAngle float64
 
-	/// The mass-spring-damper frequency in Hertz. Rotation only.
-	/// Disable softness with a value of 0.
-	FrequencyHz float64
+	/// The rotational stiffness in N*m
+	/// Disable softness with a value of 0
+	Stiffness float64
 
-	/// The damping ratio. 0 = no damping, 1 = critical damping.
-	DampingRatio float64
+	/// The rotational damping in N*m*s
+	Damping float64
 }
 
 func MakeB2WeldJointDef() B2WeldJointDef {
@@ -37,8 +37,8 @@ func MakeB2WeldJointDef() B2WeldJointDef {
 	res.LocalAnchorA.Set(0.0, 0.0)
 	res.LocalAnchorB.Set(0.0, 0.0)
 	res.ReferenceAngle = 0.0
-	res.FrequencyHz = 0.0
-	res.DampingRatio = 0.0
+	res.Stiffness = 0.0
+	res.Damping = 0.0
 
 	return res
 }
@@ -48,9 +48,9 @@ func MakeB2WeldJointDef() B2WeldJointDef {
 type B2WeldJoint struct {
 	*B2Joint
 
-	M_frequencyHz  float64
-	M_dampingRatio float64
-	M_bias         float64
+	M_stiffness float64
+	M_damping   float64
+	M_bias      float64
 
 	// Solver shared
 	M_localAnchorA   B2Vec2
@@ -88,22 +88,24 @@ func (joint B2WeldJoint) GetReferenceAngle() float64 {
 	return joint.M_referenceAngle
 }
 
-/// Set/get frequency in Hz.
-func (joint *B2WeldJoint) SetFrequency(hz float64) {
-	joint.M_frequencyHz = hz
+/// Set stiffness in N*m
+func (joint *B2WeldJoint) SetStiffness(stiffness float64) {
+	joint.M_stiffness = stiffness
 }
 
-func (joint B2WeldJoint) GetFrequency() float64 {
-	return joint.M_frequencyHz
+/// Get stiffness in N*m
+func (joint B2WeldJoint) GetStiffness() float64 {
+	return joint.M_stiffness
 }
 
-/// Set/get damping ratio.
-func (joint *B2WeldJoint) SetDampingRatio(ratio float64) {
-	joint.M_dampingRatio = ratio
+/// Set damping in N*m*s
+func (joint *B2WeldJoint) SetDamping(damping float64) {
+	joint.M_damping = damping
 }
 
-func (joint B2WeldJoint) GetDampingRatio() float64 {
-	return joint.M_dampingRatio
+/// Get damping in N*m*s
+func (joint B2WeldJoint) GetDamping() float64 {
+	return joint.M_damping
 }
 
 // // Point-to-point constraint
@@ -120,6 +122,10 @@ func (joint B2WeldJoint) GetDampingRatio() float64 {
 // // J = [0 0 -1 0 0 1]
 // // K = invI1 + invI2
 
+/// Initialize the bodies, anchors, reference angle, stiffness, and damping.
+/// @param bodyA the first body connected by this joint
+/// @param bodyB the second body connected by this joint
+/// @param anchor the point of connection in world coordinates
 func (def *B2WeldJointDef) Initialize(bA *B2Body, bB *B2Body, anchor B2Vec2) {
 	def.BodyA = bA
 	def.BodyB = bB
@@ -136,8 +142,8 @@ func MakeB2WeldJoint(def *B2WeldJointDef) *B2WeldJoint {
 	res.M_localAnchorA = def.LocalAnchorA
 	res.M_localAnchorB = def.LocalAnchorB
 	res.M_referenceAngle = def.ReferenceAngle
-	res.M_frequencyHz = def.FrequencyHz
-	res.M_dampingRatio = def.DampingRatio
+	res.M_stiffness = def.Stiffness
+	res.M_damping = def.Damping
 
 	res.M_impulse.SetZero()
 
@@ -193,25 +199,18 @@ func (joint *B2WeldJoint) InitVelocityConstraints(data B2SolverData) {
 	K.Ey.Z = K.Ez.Y
 	K.Ez.Z = iA + iB
 
-	if joint.M_frequencyHz > 0.0 {
+	if joint.M_stiffness > 0.0 {
 		K.GetInverse22(&joint.M_mass)
 
 		invM := iA + iB
-		m := 0.0
-		if invM > 0.0 {
-			m = 1.0 / invM
-		}
 
 		C := aB - aA - joint.M_referenceAngle
 
-		// Frequency
-		omega := 2.0 * B2_pi * joint.M_frequencyHz
-
 		// Damping coefficient
-		d := 2.0 * m * joint.M_dampingRatio * omega
+		d := joint.M_damping
 
 		// Spring stiffness
-		k := m * omega * omega
+		k := joint.M_stiffness
 
 		// magic formulas
 		h := data.Step.Dt
@@ -271,7 +270,7 @@ func (joint *B2WeldJoint) SolveVelocityConstraints(data B2SolverData) {
 	iA := joint.M_invIA
 	iB := joint.M_invIB
 
-	if joint.M_frequencyHz > 0.0 {
+	if joint.M_stiffness > 0.0 {
 		Cdot2 := wB - wA
 
 		impulse2 := -joint.M_mass.Ez.Z * (Cdot2 + joint.M_bias + joint.M_gamma*joint.M_impulse.Z)
@@ -347,7 +346,7 @@ func (joint *B2WeldJoint) SolvePositionConstraints(data B2SolverData) bool {
 	K.Ey.Z = K.Ez.Y
 	K.Ez.Z = iA + iB
 
-	if joint.M_frequencyHz > 0.0 {
+	if joint.M_stiffness > 0.0 {
 		C1 := B2Vec2Sub(B2Vec2Sub(B2Vec2Add(cB, rB), cA), rA)
 
 		positionError = C1.Length()
@@ -422,7 +421,7 @@ func (joint *B2WeldJoint) Dump() {
 	fmt.Printf("  jd.localAnchorA.Set(%.15f, %.15f);\n", joint.M_localAnchorA.X, joint.M_localAnchorA.Y)
 	fmt.Printf("  jd.localAnchorB.Set(%.15f, %.15f);\n", joint.M_localAnchorB.X, joint.M_localAnchorB.Y)
 	fmt.Printf("  jd.referenceAngle = %.15f;\n", joint.M_referenceAngle)
-	fmt.Printf("  jd.frequencyHz = %.15f;\n", joint.M_frequencyHz)
-	fmt.Printf("  jd.dampingRatio = %.15f;\n", joint.M_dampingRatio)
+	fmt.Printf("  jd.frequencyHz = %.15f;\n", joint.M_stiffness)
+	fmt.Printf("  jd.dampingRatio = %.15f;\n", joint.M_damping)
 	fmt.Printf("  joints[%d] = m_world.CreateJoint(&jd);\n", joint.M_index)
 }

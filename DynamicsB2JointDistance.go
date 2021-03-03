@@ -5,9 +5,8 @@ import (
 	"math"
 )
 
-/// Distance joint definition. This requires defining an
-/// anchor point on both bodies and the non-zero length of the
-/// distance joint. The definition uses local anchor points
+/// Distance joint definition. This requires defining an anchor point on both
+/// bodies and the non-zero length of the distance joint. The definition uses local anchor points
 /// so that the initial configuration can violate the constraint
 /// slightly. This helps when saving and loading a game.
 /// @warning Do not use a zero or short length.
@@ -23,12 +22,11 @@ type B2DistanceJointDef struct {
 	/// The natural length between the anchor points.
 	Length float64
 
-	/// The mass-spring-damper frequency in Hertz. A value of 0
-	/// disables softness.
-	FrequencyHz float64
+	/// The linear stiffness in N/m. A value of 0 disables softness.
+	Stiffness float64
 
-	/// The damping ratio. 0 = no damping, 1 = critical damping.
-	DampingRatio float64
+	/// The linear damping in N*s/m.
+	Damping float64
 }
 
 func MakeB2DistanceJointDef() B2DistanceJointDef {
@@ -40,21 +38,20 @@ func MakeB2DistanceJointDef() B2DistanceJointDef {
 	res.LocalAnchorA.Set(0.0, 0.0)
 	res.LocalAnchorB.Set(0.0, 0.0)
 	res.Length = 1.0
-	res.FrequencyHz = 0.0
-	res.DampingRatio = 0.0
+	res.Stiffness = 0.0
+	res.Damping = 0.0
 
 	return res
 }
 
-/// A distance joint constrains two points on two bodies
-/// to remain at a fixed distance from each other. You can view
-/// this as a massless, rigid rod.
+/// A distance joint constrains two points on two bodies to remain at a fixed
+/// distance from each other. You can view this as a massless, rigid rod.
 type B2DistanceJoint struct {
 	*B2Joint
 
-	M_frequencyHz  float64
-	M_dampingRatio float64
-	M_bias         float64
+	M_stiffness float64
+	M_damping   float64
+	M_bias      float64
 
 	// Solver shared
 	M_localAnchorA B2Vec2
@@ -88,28 +85,35 @@ func (joint B2DistanceJoint) GetLocalAnchorB() B2Vec2 {
 	return joint.M_localAnchorB
 }
 
+/// Set the natural length.
+/// Manipulating the length can lead to non-physical behavior when the frequency is zero.
 func (joint *B2DistanceJoint) SetLength(length float64) {
 	joint.M_length = length
 }
 
+/// Get the natural length.
 func (joint B2DistanceJoint) GetLength() float64 {
 	return joint.M_length
 }
 
-func (joint *B2DistanceJoint) SetFrequency(hz float64) {
-	joint.M_frequencyHz = hz
+/// Set the linear stiffness in N/m
+func (joint *B2DistanceJoint) SetStiffness(stiffness float64) {
+	joint.M_stiffness = stiffness
 }
 
-func (joint B2DistanceJoint) GetFrequency() float64 {
-	return joint.M_frequencyHz
+/// Get the linear stiffness in N/m
+func (joint B2DistanceJoint) GetStiffness() float64 {
+	return joint.M_stiffness
 }
 
-func (joint *B2DistanceJoint) SetDampingRatio(ratio float64) {
-	joint.M_dampingRatio = ratio
+/// Set linear damping in N*s/m
+func (joint *B2DistanceJoint) SetDamping(damping float64) {
+	joint.M_damping = damping
 }
 
-func (joint B2DistanceJoint) GetDampingRatio() float64 {
-	return joint.M_dampingRatio
+/// Get linear damping in N*s/m
+func (joint B2DistanceJoint) GetDamping() float64 {
+	return joint.M_damping
 }
 
 // 1-D constrained system
@@ -144,8 +148,8 @@ func MakeB2DistanceJoint(def *B2DistanceJointDef) *B2DistanceJoint {
 	res.M_localAnchorA = def.LocalAnchorA
 	res.M_localAnchorB = def.LocalAnchorB
 	res.M_length = def.Length
-	res.M_frequencyHz = def.FrequencyHz
-	res.M_dampingRatio = def.DampingRatio
+	res.M_stiffness = def.Stiffness
+	res.M_damping = def.Damping
 	res.M_impulse = 0.0
 	res.M_gamma = 0.0
 	res.M_bias = 0.0
@@ -192,24 +196,11 @@ func (joint *B2DistanceJoint) InitVelocityConstraints(data B2SolverData) {
 	crBu := B2Vec2Cross(joint.M_rB, joint.M_u)
 	invMass := joint.M_invMassA + joint.M_invIA*crAu*crAu + joint.M_invMassB + joint.M_invIB*crBu*crBu
 
-	// Compute the effective mass matrix.
-	if invMass != 0.0 {
-		joint.M_mass = 1.0 / invMass
-	} else {
-		joint.M_mass = 0
-	}
-
-	if joint.M_frequencyHz > 0.0 {
+	if joint.M_stiffness > 0.0 {
 		C := length - joint.M_length
 
-		// Frequency
-		omega := 2.0 * B2_pi * joint.M_frequencyHz
-
-		// Damping coefficient
-		d := 2.0 * joint.M_mass * joint.M_dampingRatio * omega
-
-		// Spring stiffness
-		k := joint.M_mass * omega * omega
+		d := joint.M_damping
+		k := joint.M_stiffness
 
 		// magic formulas
 		h := data.Step.Dt
@@ -232,6 +223,11 @@ func (joint *B2DistanceJoint) InitVelocityConstraints(data B2SolverData) {
 	} else {
 		joint.M_gamma = 0.0
 		joint.M_bias = 0.0
+		if invMass != 0.0 {
+			joint.M_mass = 1.0 / invMass
+		} else {
+			joint.M_mass = 0
+		}
 	}
 
 	if data.Step.WarmStarting {
@@ -282,7 +278,7 @@ func (joint *B2DistanceJoint) SolveVelocityConstraints(data B2SolverData) {
 }
 
 func (joint *B2DistanceJoint) SolvePositionConstraints(data B2SolverData) bool {
-	if joint.M_frequencyHz > 0.0 {
+	if joint.M_stiffness > 0.0 {
 		// There is no position correction for soft distance constraints.
 		return true
 	}
@@ -347,7 +343,7 @@ func (joint B2DistanceJoint) Dump() {
 	fmt.Printf("  jd.localAnchorA.Set(%.15f, %.15f);\n", joint.M_localAnchorA.X, joint.M_localAnchorA.Y)
 	fmt.Printf("  jd.localAnchorB.Set(%.15f, %.15f);\n", joint.M_localAnchorB.X, joint.M_localAnchorB.Y)
 	fmt.Printf("  jd.length = %.15f;\n", joint.M_length)
-	fmt.Printf("  jd.frequencyHz = %.15f;\n", joint.M_frequencyHz)
-	fmt.Printf("  jd.dampingRatio = %.15f;\n", joint.M_dampingRatio)
+	fmt.Printf("  jd.frequencyHz = %.15f;\n", joint.M_stiffness)
+	fmt.Printf("  jd.dampingRatio = %.15f;\n", joint.M_damping)
 	fmt.Printf("  joints[%d] = m_world.CreateJoint(&jd);\n", joint.M_index)
 }

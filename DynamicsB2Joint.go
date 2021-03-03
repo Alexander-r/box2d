@@ -28,18 +28,6 @@ var B2JointType = struct {
 	E_motorJoint:     12,
 }
 
-var B2LimitState = struct {
-	E_inactiveLimit uint8
-	E_atLowerLimit  uint8
-	E_atUpperLimit  uint8
-	E_equalLimits   uint8
-}{
-	E_inactiveLimit: 1,
-	E_atLowerLimit:  2,
-	E_atUpperLimit:  3,
-	E_equalLimits:   4,
-}
-
 type B2Jacobian struct {
 	Linear   B2Vec2
 	AngularA float64
@@ -140,6 +128,42 @@ func MakeB2JointDef() B2JointDef {
 	res.CollideConnected = false
 
 	return res
+}
+
+/// Utility to compute linear stiffness values from frequency and damping ratio
+func B2LinearStiffness(stiffness *float64, damping *float64, frequencyHertz float64, dampingRatio float64, bodyA *B2Body, bodyB *B2Body) {
+	massA := bodyA.GetMass()
+	massB := bodyB.GetMass()
+	var mass float64
+	if massA > 0.0 && massB > 0.0 {
+		mass = massA * massB / (massA + massB)
+	} else if massA > 0.0 {
+		mass = massA
+	} else {
+		mass = massB
+	}
+
+	omega := 2.0 * B2_pi * frequencyHertz
+	*stiffness = mass * omega * omega
+	*damping = 2.0 * mass * dampingRatio * omega
+}
+
+/// Utility to compute rotational stiffness values frequency and damping ratio
+func B2AngularStiffness(stiffness *float64, damping *float64, frequencyHertz float64, dampingRatio float64, bodyA *B2Body, bodyB *B2Body) {
+	IA := bodyA.GetInertia()
+	IB := bodyB.GetInertia()
+	var I float64
+	if IA > 0.0 && IB > 0.0 {
+		I = IA * IB / (IA + IB)
+	} else if IA > 0.0 {
+		I = IA
+	} else {
+		I = IB
+	}
+
+	omega := 2.0 * B2_pi * frequencyHertz
+	*stiffness = I * omega * omega
+	*damping = 2.0 * I * dampingRatio * omega
 }
 
 /// The base joint class. Joints are used to constraint two bodies together in
