@@ -109,27 +109,21 @@ func ComputeCentroid(vs []B2Vec2, count int) B2Vec2 {
 	c := MakeB2Vec2(0, 0)
 	area := 0.0
 
-	// pRef is the reference point for forming triangles.
-	// It's location doesn't change the result (except for rounding error).
-	pRef := MakeB2Vec2(0.0, 0.0)
-
-	// This code would put the reference point inside the polygon.
-	for i := 0; i < count; i++ {
-		pRef.OperatorPlusInplace(vs[i])
-	}
-	pRef.OperatorScalarMulInplace(1.0 / float64(count))
+	// Get a reference point for forming triangles.
+	// Use the first vertex to reduce round-off errors.
+	s := vs[0]
 
 	inv3 := 1.0 / 3.0
 
 	for i := 0; i < count; i++ {
 		// Triangle vertices.
-		p1 := pRef
-		p2 := vs[i]
+		p1 := B2Vec2Sub(vs[0], s)
+		p2 := B2Vec2Sub(vs[i], s)
 		p3 := MakeB2Vec2(0, 0)
 		if i+1 < count {
-			p3 = vs[i+1]
+			p3 = B2Vec2Sub(vs[i+1], s)
 		} else {
-			p3 = vs[0]
+			p3 = B2Vec2Sub(vs[0], s)
 		}
 
 		e1 := B2Vec2Sub(p2, p1)
@@ -146,7 +140,7 @@ func ComputeCentroid(vs []B2Vec2, count int) B2Vec2 {
 
 	// Centroid
 	B2Assert(area > B2_epsilon)
-	c.OperatorScalarMulInplace(1.0 / area)
+	c = B2Vec2Add(B2Vec2MulScalar(1.0/area, c), s)
 	return c
 }
 
@@ -393,16 +387,9 @@ func (poly B2PolygonShape) ComputeMass(massData *B2MassData, density float64) {
 	area := 0.0
 	I := 0.0
 
-	// s is the reference point for forming triangles.
-	// It's location doesn't change the result (except for rounding error).
-	s := MakeB2Vec2(0.0, 0.0)
-
-	// This code would put the reference point inside the polygon.
-	for i := 0; i < poly.M_count; i++ {
-		s.OperatorPlusInplace(poly.M_vertices[i])
-	}
-
-	s.OperatorScalarMulInplace(1.0 / float64(poly.M_count))
+	// Get a reference point for forming triangles.
+	// Use the first vertex to reduce round-off errors.
+	s := poly.M_vertices[0]
 
 	k_inv3 := 1.0 / 3.0
 
