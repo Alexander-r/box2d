@@ -770,9 +770,12 @@ func B2IsPowerOfTwo(x uint32) bool {
 	return x > 0 && (x&(x-1)) == 0
 }
 
+// https://fgiesen.wordpress.com/2012/08/15/linear-interpolation-past-present-and-future/
 func (sweep B2Sweep) GetTransform(xf *B2Transform, beta float64) {
-	xf.P = B2Vec2Add(sweep.C0, B2Vec2MulScalar(beta, B2Vec2Sub(sweep.C, sweep.C0)))
-	angle := sweep.A0 + (sweep.A-sweep.A0)*beta
+	//	xf->p = (1.0f - beta) * c0 + beta * c;
+	//	float angle = (1.0f - beta) * a0 + beta * a;
+	xf.P = B2Vec2Add(B2Vec2MulScalar(1.0-beta, sweep.C0), B2Vec2MulScalar(beta, sweep.C))
+	angle := (1.0-beta)*sweep.A0 + beta*sweep.A
 	xf.Q.Set(angle)
 
 	// Shift to origin
