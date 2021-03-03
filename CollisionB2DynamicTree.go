@@ -58,9 +58,6 @@ type B2DynamicTree struct {
 
 	M_freeList int
 
-	/// This is used to incrementally traverse the tree for re-balancing.
-	M_path int
-
 	M_insertionCount int
 }
 
@@ -214,8 +211,6 @@ func MakeB2DynamicTree() B2DynamicTree {
 	tree.M_nodes[tree.M_nodeCapacity-1].Next = B2_nullNode
 	tree.M_nodes[tree.M_nodeCapacity-1].Height = -1
 	tree.M_freeList = 0
-
-	tree.M_path = 0
 
 	tree.M_insertionCount = 0
 
