@@ -18,11 +18,11 @@ type B2MouseJointDef struct {
 	/// as some multiple of the weight (multiplier * mass * gravity).
 	MaxForce float64
 
-	/// The response speed.
-	FrequencyHz float64
+	/// The linear stiffness in N/m
+	Stiffness float64
 
-	/// The damping ratio. 0 = no damping, 1 = critical damping.
-	DampingRatio float64
+	/// The linear damping in N*s/m
+	Damping float64
 }
 
 func MakeB2MouseJointDef() B2MouseJointDef {
@@ -33,8 +33,8 @@ func MakeB2MouseJointDef() B2MouseJointDef {
 	res.Type = B2JointType.E_mouseJoint
 	res.Target.Set(0.0, 0.0)
 	res.MaxForce = 0.0
-	res.FrequencyHz = 5.0
-	res.DampingRatio = 0.7
+	res.Stiffness = 0.0
+	res.Damping = 0.0
 
 	return res
 }
@@ -51,8 +51,8 @@ type B2MouseJoint struct {
 
 	M_localAnchorB B2Vec2
 	M_targetA      B2Vec2
-	M_frequencyHz  float64
-	M_dampingRatio float64
+	M_stiffness    float64
+	M_damping      float64
 	M_beta         float64
 
 	// Solver shared
@@ -89,20 +89,13 @@ func MakeB2MouseJoint(def *B2MouseJointDef) *B2MouseJoint {
 		B2Joint: MakeB2Joint(def),
 	}
 
-	B2Assert(def.Target.IsValid())
-	B2Assert(B2IsValid(def.MaxForce) && def.MaxForce >= 0.0)
-	B2Assert(B2IsValid(def.FrequencyHz) && def.FrequencyHz >= 0.0)
-	B2Assert(B2IsValid(def.DampingRatio) && def.DampingRatio >= 0.0)
-
 	res.M_targetA = def.Target
 	res.M_localAnchorB = B2TransformVec2MulT(res.M_bodyB.GetTransform(), res.M_targetA)
-
 	res.M_maxForce = def.MaxForce
+	res.M_stiffness = def.Stiffness
+	res.M_damping = def.Damping
+
 	res.M_impulse.SetZero()
-
-	res.M_frequencyHz = def.FrequencyHz
-	res.M_dampingRatio = def.DampingRatio
-
 	res.M_beta = 0.0
 	res.M_gamma = 0.0
 
@@ -116,32 +109,39 @@ func (joint *B2MouseJoint) SetTarget(target B2Vec2) {
 	}
 }
 
+/// Use this to update the target point.
 func (joint B2MouseJoint) GetTarget() B2Vec2 {
 	return joint.M_targetA
 }
 
+/// Set the maximum force in Newtons.
 func (joint *B2MouseJoint) SetMaxForce(force float64) {
 	joint.M_maxForce = force
 }
 
+/// Get the maximum force in Newtons.
 func (joint B2MouseJoint) GetMaxForce() float64 {
 	return joint.M_maxForce
 }
 
-func (joint *B2MouseJoint) SetFrequency(hz float64) {
-	joint.M_frequencyHz = hz
+/// Set the linear stiffness in N/m
+func (joint *B2MouseJoint) SetStiffness(stiffness float64) {
+	joint.M_stiffness = stiffness
 }
 
-func (joint B2MouseJoint) GetFrequency() float64 {
-	return joint.M_frequencyHz
+/// Get the linear stiffness in N/m
+func (joint B2MouseJoint) GetStiffness() float64 {
+	return joint.M_stiffness
 }
 
-func (joint *B2MouseJoint) SetDampingRatio(ratio float64) {
-	joint.M_dampingRatio = ratio
+/// Set linear damping in N*s/m
+func (joint *B2MouseJoint) SetDamping(damping float64) {
+	joint.M_damping = damping
 }
 
-func (joint B2MouseJoint) GetDampingRatio() float64 {
-	return joint.M_dampingRatio
+/// Get linear damping in N*s/m
+func (joint B2MouseJoint) GetDamping() float64 {
+	return joint.M_damping
 }
 
 func (joint *B2MouseJoint) InitVelocityConstraints(data B2SolverData) {
@@ -157,16 +157,10 @@ func (joint *B2MouseJoint) InitVelocityConstraints(data B2SolverData) {
 
 	qB := MakeB2RotFromAngle(aB)
 
-	mass := joint.M_bodyB.GetMass()
+	//mass := joint.M_bodyB.GetMass()
 
-	// Frequency
-	omega := 2.0 * B2_pi * joint.M_frequencyHz
-
-	// Damping coefficient
-	d := 2.0 * mass * joint.M_dampingRatio * omega
-
-	// Spring stiffness
-	k := mass * (omega * omega)
+	d := joint.M_damping
+	k := joint.M_stiffness
 
 	// magic formulas
 	// gamma has units of inverse mass.
