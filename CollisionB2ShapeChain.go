@@ -166,8 +166,12 @@ func (chain B2ChainShape) ComputeAABB(aabb *B2AABB, xf B2Transform, childIndex i
 	v1 := B2TransformVec2Mul(xf, chain.M_vertices[i1])
 	v2 := B2TransformVec2Mul(xf, chain.M_vertices[i2])
 
-	aabb.LowerBound = B2Vec2Min(v1, v2)
-	aabb.UpperBound = B2Vec2Max(v1, v2)
+	lower := B2Vec2Min(v1, v2)
+	upper := B2Vec2Max(v1, v2)
+
+	r := MakeB2Vec2(chain.M_radius, chain.M_radius)
+	aabb.LowerBound = B2Vec2Sub(lower, r)
+	aabb.UpperBound = B2Vec2Add(upper, r)
 }
 
 func (chain B2ChainShape) ComputeMass(massData *B2MassData, density float64) {
