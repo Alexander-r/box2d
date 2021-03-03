@@ -397,7 +397,8 @@ func B2ContactDestroy(contact B2ContactInterface) {
 	typeA := fixtureA.GetType()
 	typeB := fixtureB.GetType()
 
-	B2Assert(0 <= typeA && typeB < B2Shape_Type.E_typeCount)
+	B2Assert(0 <= typeA && typeA < B2Shape_Type.E_typeCount)
+	B2Assert(0 <= typeB && typeB < B2Shape_Type.E_typeCount)
 
 	destroyFcn := s_registers[typeA][typeB].DestroyFcn
 	destroyFcn(contact)
