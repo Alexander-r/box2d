@@ -761,6 +761,7 @@ func B2Distance(output *B2DistanceOutput, cache *B2SimplexCache, input *B2Distan
 // "Smooth Mesh Contacts with GJK" in Game Physics Pearls. 2010
 //
 // Perform a linear shape cast of shape B moving and shape A fixed. Determines the hit point, normal, and translation fraction.
+/// @returns true if hit, false if there is no hit or an initial overlap
 func B2ShapeCast(output *B2ShapeCastOutput, input *B2ShapeCastInput) bool {
 	output.Iterations = 0
 	output.Lambda = 1.0
@@ -803,7 +804,7 @@ func B2ShapeCast(output *B2ShapeCastOutput, input *B2ShapeCastInput) bool {
 	// Main iteration loop.
 	k_maxIters := 20
 	iter := 0
-	for iter < k_maxIters && math.Abs(v.Length()-sigma) > tolerance {
+	for iter < k_maxIters && v.Length()-sigma > tolerance {
 		B2Assert(simplex.M_count < 3)
 
 		output.Iterations += 1
@@ -875,6 +876,11 @@ func B2ShapeCast(output *B2ShapeCastOutput, input *B2ShapeCastInput) bool {
 
 		// Iteration count is equated to the number of support point calls.
 		iter++
+	}
+
+	if iter == 0 {
+		// Initial overlap
+		return false
 	}
 
 	// Prepare output.

@@ -78,7 +78,7 @@ func TestCPPComplianceShapeCast(t *testing.T) {
 	}
 }
 
-var expectedShapeCast2 string = "hit = true, iters = 20, lambda = 0, distance = 0.250000000000000"
+var expectedShapeCast2 string = "hit = false, iters = 0, lambda = 1, distance = 8.003905296791061"
 
 func TestCPPComplianceShapeCast2(t *testing.T) {
 	transformA := box2d.MakeB2Transform()
