@@ -856,6 +856,9 @@ func (body *B2Body) SetTransform(position B2Vec2, angle float64) {
 	for f := body.M_fixtureList; f != nil; f = f.M_next {
 		f.Synchronize(broadPhase, body.M_xf, body.M_xf)
 	}
+
+	// Check for new contacts the next step
+	body.M_world.M_newContacts = true
 }
 
 func (body *B2Body) SynchronizeFixtures() {
