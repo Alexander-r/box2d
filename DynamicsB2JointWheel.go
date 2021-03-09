@@ -555,7 +555,7 @@ func (joint B2WheelJoint) GetAnchorB() B2Vec2 {
 }
 
 func (joint B2WheelJoint) GetReactionForce(inv_dt float64) B2Vec2 {
-	return B2Vec2MulScalar(inv_dt, B2Vec2Add(B2Vec2MulScalar(joint.M_impulse, joint.M_ay), B2Vec2MulScalar(joint.M_springImpulse, joint.M_ax)))
+	return B2Vec2MulScalar(inv_dt, B2Vec2Add(B2Vec2MulScalar(joint.M_impulse, joint.M_ay), B2Vec2MulScalar(joint.M_springImpulse+joint.M_lowerImpulse-joint.M_upperImpulse, joint.M_ax)))
 }
 
 func (joint B2WheelJoint) GetReactionTorque(inv_dt float64) float64 {
