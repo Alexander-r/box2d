@@ -137,8 +137,6 @@ func (joint *B2RopeJoint) InitVelocityConstraints(data B2SolverData) {
 
 	joint.M_length = joint.M_u.Length()
 
-	//C := joint.M_length - joint.M_maxLength
-
 	if joint.M_length > B2_linearSlop {
 		joint.M_u.OperatorScalarMulInplace(1.0 / joint.M_length)
 	} else {

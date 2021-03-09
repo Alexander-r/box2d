@@ -357,7 +357,6 @@ func (joint *B2RevoluteJoint) SolvePositionConstraints(data B2SolverData) bool {
 	fixedRotation := (joint.M_invIA+joint.M_invIB == 0.0)
 
 	// Solve angular limit constraint
-	//bool active = false;
 	if joint.M_enableLimit && fixedRotation == false {
 		angle := aB - aA - joint.M_referenceAngle
 		C := 0.0
