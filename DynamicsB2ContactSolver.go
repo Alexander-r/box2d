@@ -25,6 +25,7 @@ type B2ContactVelocityConstraint struct {
 	InvIA, InvIB       float64
 	Friction           float64
 	Restitution        float64
+	Threshold          float64
 	TangentSpeed       float64
 	PointCount         int
 	ContactIndex       int
@@ -114,6 +115,7 @@ func MakeB2ContactSolver(def *B2ContactSolverDef) B2ContactSolver {
 		vc := &solver.M_velocityConstraints[i]
 		vc.Friction = contact.GetFriction()
 		vc.Restitution = contact.GetRestitution()
+		vc.Threshold = contact.GetRestitutionThreshold()
 		vc.TangentSpeed = contact.GetTangentSpeed()
 		vc.IndexA = bodyA.M_islandIndex
 		vc.IndexB = bodyB.M_islandIndex
@@ -259,7 +261,7 @@ func (solver *B2ContactSolver) InitializeVelocityConstraints() {
 					B2Vec2CrossScalarVector(wA, vcp.RA),
 				),
 			)
-			if vRel < -B2_velocityThreshold {
+			if vRel < -vc.Threshold {
 				vcp.VelocityBias = -vc.Restitution * vRel
 			}
 		}

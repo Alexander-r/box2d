@@ -57,10 +57,6 @@ const B2_maxSubSteps = 8
 /// Maximum number of contacts to be handled to solve a TOI impact.
 const B2_maxTOIContacts = 32
 
-/// A velocity threshold for elastic collisions. Any collision with a relative linear
-/// velocity below this threshold will be treated as inelastic.
-const B2_velocityThreshold = 1.0 * B2_lengthUnitsPerMeter
-
 /// The maximum linear position correction used when solving constraints. This helps to
 /// prevent overshoot.
 const B2_maxLinearCorrection = 0.2 * B2_lengthUnitsPerMeter

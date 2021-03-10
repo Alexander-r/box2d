@@ -44,6 +44,10 @@ type B2FixtureDef struct {
 	/// The restitution (elasticity) usually in the range [0,1].
 	Restitution float64
 
+	/// Restitution velocity threshold, usually in m/s. Collisions above this
+	/// speed have restitution applied (will bounce).
+	RestitutionThreshold float64
+
 	/// The density, usually in kg/m^2.
 	Density float64
 
@@ -58,13 +62,14 @@ type B2FixtureDef struct {
 /// The constructor sets the default fixture definition values.
 func MakeB2FixtureDef() B2FixtureDef {
 	return B2FixtureDef{
-		Shape:       nil,
-		UserData:    nil,
-		Friction:    0.2,
-		Restitution: 0.0,
-		Density:     0.0,
-		IsSensor:    false,
-		Filter:      B2Filter{CategoryBits: 0x0001, MaskBits: 0xFFFF},
+		Shape:                nil,
+		UserData:             nil,
+		Friction:             0.2,
+		Restitution:          0.0,
+		RestitutionThreshold: 1.0 * B2_lengthUnitsPerMeter,
+		Density:              0.0,
+		IsSensor:             false,
+		Filter:               B2Filter{CategoryBits: 0x0001, MaskBits: 0xFFFF},
 	}
 }
 
@@ -89,8 +94,9 @@ type B2Fixture struct {
 
 	M_shape B2ShapeInterface
 
-	M_friction    float64
-	M_restitution float64
+	M_friction             float64
+	M_restitution          float64
+	M_restitutionThreshold float64
 
 	M_proxies    []B2FixtureProxy
 	M_proxyCount int
@@ -142,29 +148,49 @@ func (fix B2Fixture) GetNext() *B2Fixture {
 	return fix.M_next
 }
 
+/// Set the density of this fixture. This will _not_ automatically adjust the mass
+/// of the body. You must call b2Body::ResetMassData to update the body's mass.
 func (fix *B2Fixture) SetDensity(density float64) {
 	B2Assert(B2IsValid(density) && density >= 0.0)
 	fix.M_density = density
 }
 
+/// Get the density of this fixture.
 func (fix B2Fixture) GetDensity() float64 {
 	return fix.M_density
 }
 
+/// Get the coefficient of friction.
 func (fix B2Fixture) GetFriction() float64 {
 	return fix.M_friction
 }
 
+/// Set the coefficient of friction. This will _not_ change the friction of
+/// existing contacts.
 func (fix *B2Fixture) SetFriction(friction float64) {
 	fix.M_friction = friction
 }
 
+/// Get the coefficient of restitution.
 func (fix B2Fixture) GetRestitution() float64 {
 	return fix.M_restitution
 }
 
+/// Set the coefficient of restitution. This will _not_ change the restitution of
+/// existing contacts.
 func (fix *B2Fixture) SetRestitution(restitution float64) {
 	fix.M_restitution = restitution
+}
+
+/// Get the restitution velocity threshold.
+func (fix B2Fixture) GetRestitutionThreshold() float64 {
+	return fix.M_restitutionThreshold
+}
+
+/// Set the restitution threshold. This will _not_ change the restitution threshold of
+/// existing contacts.
+func (fix *B2Fixture) SetRestitutionThreshold(threshold float64) {
+	fix.M_restitutionThreshold = threshold
 }
 
 func (fix B2Fixture) TestPoint(p B2Vec2) bool {
@@ -179,6 +205,9 @@ func (fix B2Fixture) GetMassData(massData *B2MassData) {
 	fix.M_shape.ComputeMass(massData, fix.M_density)
 }
 
+/// Get the fixture's AABB. This AABB may be enlarge and/or stale.
+/// If you need a more accurate AABB, compute it using the shape and
+/// the body transform.
 func (fix B2Fixture) GetAABB(childIndex int) B2AABB {
 	B2Assert(0 <= childIndex && childIndex < fix.M_proxyCount)
 	return fix.M_proxies[childIndex].Aabb
@@ -208,6 +237,7 @@ func (fix *B2Fixture) Create(body *B2Body, def *B2FixtureDef) {
 	fix.M_userData = def.UserData
 	fix.M_friction = def.Friction
 	fix.M_restitution = def.Restitution
+	fix.M_restitutionThreshold = def.RestitutionThreshold
 
 	fix.M_body = body
 	fix.M_next = nil
@@ -375,6 +405,7 @@ func (fix *B2Fixture) Dump(bodyIndex int) {
 	fmt.Print(fmt.Printf("    b2FixtureDef fd;\n"))
 	fmt.Print(fmt.Printf("    fd.friction = %.15f;\n", fix.M_friction))
 	fmt.Print(fmt.Printf("    fd.restitution = %.15f;\n", fix.M_restitution))
+	fmt.Print(fmt.Printf("    fd.restitutionThreshold = %.15f;\n", fix.M_restitutionThreshold))
 	fmt.Print(fmt.Printf("    fd.density = %.15f;\n", fix.M_density))
 	fmt.Print(fmt.Printf("    fd.isSensor = bool(%v);\n", fix.M_isSensor))
 	fmt.Print(fmt.Printf("    fd.filter.categoryBits = uint16(%d);\n", fix.M_filter.CategoryBits))

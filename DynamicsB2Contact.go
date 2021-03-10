@@ -20,6 +20,15 @@ func B2MixRestitution(restitution1, restitution2 float64) float64 {
 	return restitution2
 }
 
+/// Restitution mixing law. This picks the lowest value.
+func B2MixRestitutionThreshold(threshold1, threshold2 float64) float64 {
+	if threshold1 < threshold2 {
+		return threshold1
+	}
+
+	return threshold2
+}
+
 type B2ContactCreateFcn func(fixtureA *B2Fixture, indexA int, fixtureB *B2Fixture, indexB int) B2ContactInterface // returned contact should be a pointer
 type B2ContactDestroyFcn func(contact B2ContactInterface)                                                         // contact should be a pointer
 
@@ -122,6 +131,9 @@ type B2ContactInterface interface {
 	GetRestitution() float64
 	SetRestitution(restitution float64)
 	ResetRestitution()
+	SetRestitutionThreshold(float64)
+	GetRestitutionThreshold() float64
+	ResetRestitutionThreshold()
 
 	GetTangentSpeed() float64
 	SetTangentSpeed(tangentSpeed float64)
@@ -156,10 +168,12 @@ type B2Contact struct {
 
 	M_manifold *B2Manifold
 
-	M_toiCount     int
-	M_toi          float64
-	M_friction     float64
-	M_restitution  float64
+	M_toiCount             int
+	M_toi                  float64
+	M_friction             float64
+	M_restitution          float64
+	M_restitutionThreshold float64
+
 	M_tangentSpeed float64
 }
 
@@ -259,34 +273,60 @@ func (contact *B2Contact) SetTOI(toi float64) {
 	contact.M_toi = toi
 }
 
+/// Get the friction.
 func (contact B2Contact) GetFriction() float64 {
 	return contact.M_friction
 }
 
+/// Override the default friction mixture. You can call this in b2ContactListener::PreSolve.
+/// This value persists until set or reset.
 func (contact *B2Contact) SetFriction(friction float64) {
 	contact.M_friction = friction
 }
 
+/// Reset the friction mixture to the default value.
 func (contact *B2Contact) ResetFriction() {
 	contact.M_friction = B2MixFriction(contact.M_fixtureA.M_friction, contact.M_fixtureB.M_friction)
 }
 
+/// Get the restitution.
 func (contact B2Contact) GetRestitution() float64 {
 	return contact.M_restitution
 }
 
+/// Override the default restitution mixture. You can call this in b2ContactListener::PreSolve.
+/// The value persists until you set or reset.
 func (contact *B2Contact) SetRestitution(restitution float64) {
 	contact.M_restitution = restitution
 }
 
+/// Reset the restitution to the default value.
 func (contact *B2Contact) ResetRestitution() {
 	contact.M_restitution = B2MixRestitution(contact.M_fixtureA.M_restitution, contact.M_fixtureB.M_restitution)
 }
 
+/// Override the default restitution velocity threshold mixture. You can call this in b2ContactListener::PreSolve.
+/// The value persists until you set or reset.
+func (contact *B2Contact) SetRestitutionThreshold(threshold float64) {
+	contact.M_restitutionThreshold = threshold
+}
+
+/// Get the restitution threshold.
+func (contact B2Contact) GetRestitutionThreshold() float64 {
+	return contact.M_restitutionThreshold
+}
+
+/// Reset the restitution threshold to the default value.
+func (contact *B2Contact) ResetRestitutionThreshold() {
+	contact.M_restitutionThreshold = B2MixRestitutionThreshold(contact.M_fixtureA.M_restitutionThreshold, contact.M_fixtureB.M_restitutionThreshold)
+}
+
+/// Get the desired tangent speed. In meters per second.
 func (contact B2Contact) GetTangentSpeed() float64 {
 	return contact.M_tangentSpeed
 }
 
+/// Set the desired tangent speed for a conveyor belt behavior. In meters per second.
 func (contact *B2Contact) SetTangentSpeed(speed float64) {
 	contact.M_tangentSpeed = speed
 }
@@ -405,7 +445,6 @@ func B2ContactDestroy(contact B2ContactInterface) {
 }
 
 func MakeB2Contact(fA *B2Fixture, indexA int, fB *B2Fixture, indexB int) B2Contact {
-
 	contact := B2Contact{}
 	contact.M_flags = B2Contact_Flag.E_enabledFlag
 
@@ -439,6 +478,7 @@ func MakeB2Contact(fA *B2Fixture, indexA int, fB *B2Fixture, indexB int) B2Conta
 
 	contact.M_friction = B2MixFriction(contact.M_fixtureA.M_friction, contact.M_fixtureB.M_friction)
 	contact.M_restitution = B2MixRestitution(contact.M_fixtureA.M_restitution, contact.M_fixtureB.M_restitution)
+	contact.M_restitutionThreshold = B2MixRestitutionThreshold(contact.M_fixtureA.M_restitutionThreshold, contact.M_fixtureB.M_restitutionThreshold)
 
 	contact.M_tangentSpeed = 0.0
 
