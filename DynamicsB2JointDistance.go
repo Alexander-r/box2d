@@ -6,10 +6,9 @@ import (
 )
 
 /// Distance joint definition. This requires defining an anchor point on both
-/// bodies and the non-zero length of the distance joint. The definition uses local anchor points
-/// so that the initial configuration can violate the constraint
-/// slightly. This helps when saving and loading a game.
-/// @warning Do not use a zero or short length.
+/// bodies and the non-zero distance of the distance joint. The definition uses
+/// local anchor points so that the initial configuration can violate the
+/// constraint slightly. This helps when saving and loading a game.
 type B2DistanceJointDef struct {
 	B2JointDef
 
@@ -19,10 +18,16 @@ type B2DistanceJointDef struct {
 	/// The local anchor point relative to bodyB's origin.
 	LocalAnchorB B2Vec2
 
-	/// The natural length between the anchor points.
+	/// The rest length of this joint. Clamped to a stable minimum value.
 	Length float64
 
-	/// The linear stiffness in N/m. A value of 0 disables softness.
+	/// Minimum length. Clamped to a stable minimum value.
+	MinLength float64
+
+	/// Maximum length. Must be greater than or equal to the minimum length.
+	MaxLength float64
+
+	/// The linear stiffness in N/m.
 	Stiffness float64
 
 	/// The linear damping in N*s/m.
@@ -38,6 +43,8 @@ func MakeB2DistanceJointDef() B2DistanceJointDef {
 	res.LocalAnchorA.Set(0.0, 0.0)
 	res.LocalAnchorB.Set(0.0, 0.0)
 	res.Length = 1.0
+	res.MinLength = 0.0
+	res.MaxLength = B2_maxFloat
 	res.Stiffness = 0.0
 	res.Damping = 0.0
 
@@ -52,27 +59,33 @@ type B2DistanceJoint struct {
 	M_stiffness float64
 	M_damping   float64
 	M_bias      float64
+	M_length    float64
+	M_minLength float64
+	M_maxLength float64
 
 	// Solver shared
 	M_localAnchorA B2Vec2
 	M_localAnchorB B2Vec2
 	M_gamma        float64
 	M_impulse      float64
-	M_length       float64
+	M_lowerImpulse float64
+	M_upperImpulse float64
 
 	// Solver temp
-	M_indexA       int
-	M_indexB       int
-	M_u            B2Vec2
-	M_rA           B2Vec2
-	M_rB           B2Vec2
-	M_localCenterA B2Vec2
-	M_localCenterB B2Vec2
-	M_invMassA     float64
-	M_invMassB     float64
-	M_invIA        float64
-	M_invIB        float64
-	M_mass         float64
+	M_indexA        int
+	M_indexB        int
+	M_u             B2Vec2
+	M_rA            B2Vec2
+	M_rB            B2Vec2
+	M_localCenterA  B2Vec2
+	M_localCenterB  B2Vec2
+	M_currentLength float64
+	M_invMassA      float64
+	M_invMassB      float64
+	M_invIA         float64
+	M_invIB         float64
+	M_softMass      float64
+	M_mass          float64
 }
 
 /// The local anchor point relative to bodyA's origin.
@@ -85,15 +98,52 @@ func (joint B2DistanceJoint) GetLocalAnchorB() B2Vec2 {
 	return joint.M_localAnchorB
 }
 
-/// Set the natural length.
-/// Manipulating the length can lead to non-physical behavior when the frequency is zero.
-func (joint *B2DistanceJoint) SetLength(length float64) {
-	joint.M_length = length
-}
-
-/// Get the natural length.
+/// Get the rest length
 func (joint B2DistanceJoint) GetLength() float64 {
 	return joint.M_length
+}
+
+/// Set the rest length
+/// @returns clamped rest length
+func (joint *B2DistanceJoint) SetLength(length float64) float64 {
+	joint.M_impulse = 0.0
+	joint.M_length = math.Max(B2_linearSlop, length)
+	return joint.M_length
+}
+
+/// Get the minimum length
+func (joint B2DistanceJoint) GetMinLength() float64 {
+	return joint.M_minLength
+}
+
+/// Set the minimum length
+/// @returns the clamped minimum length
+func (joint *B2DistanceJoint) SetMinLength(minLength float64) float64 {
+	joint.M_lowerImpulse = 0.0
+	joint.M_minLength = B2FloatClamp(minLength, B2_linearSlop, joint.M_maxLength)
+	return joint.M_minLength
+}
+
+/// Get the maximum length
+func (joint B2DistanceJoint) GetMaxLength() float64 {
+	return joint.M_maxLength
+}
+
+/// Set the maximum length
+/// @returns the clamped maximum length
+func (joint *B2DistanceJoint) SetMaxLength(maxLength float64) float64 {
+	joint.M_upperImpulse = 0.0
+	joint.M_maxLength = math.Max(maxLength, joint.M_minLength)
+	return joint.M_maxLength
+}
+
+/// Get the current length
+func (joint B2DistanceJoint) GetCurrentLength() float64 {
+	pA := joint.M_bodyA.GetWorldPoint(joint.M_localAnchorA)
+	pB := joint.M_bodyB.GetWorldPoint(joint.M_localAnchorB)
+	d := B2Vec2Sub(pB, pA)
+	length := d.Length()
+	return length
 }
 
 /// Set the linear stiffness in N/m
@@ -131,13 +181,17 @@ func (joint B2DistanceJoint) GetDamping() float64 {
 // K = J * invM * JT
 //   = invMass1 + invI1 * cross(r1, u)^2 + invMass2 + invI2 * cross(r2, u)^2
 
+/// Initialize the bodies, anchors, and rest length using world space anchors.
+/// The minimum and maximum lengths are set to the rest length.
 func (joint *B2DistanceJointDef) Initialize(b1 *B2Body, b2 *B2Body, anchor1 B2Vec2, anchor2 B2Vec2) {
 	joint.BodyA = b1
 	joint.BodyB = b2
 	joint.LocalAnchorA = joint.BodyA.GetLocalPoint(anchor1)
 	joint.LocalAnchorB = joint.BodyB.GetLocalPoint(anchor2)
 	d := B2Vec2Sub(anchor2, anchor1)
-	joint.Length = d.Length()
+	joint.Length = math.Max(d.Length(), B2_linearSlop)
+	joint.MinLength = joint.Length
+	joint.MaxLength = joint.Length
 }
 
 func MakeB2DistanceJoint(def *B2DistanceJointDef) *B2DistanceJoint {
@@ -147,12 +201,17 @@ func MakeB2DistanceJoint(def *B2DistanceJointDef) *B2DistanceJoint {
 
 	res.M_localAnchorA = def.LocalAnchorA
 	res.M_localAnchorB = def.LocalAnchorB
-	res.M_length = def.Length
+	res.M_length = math.Max(def.Length, B2_linearSlop)
+	res.M_minLength = math.Max(def.MinLength, B2_linearSlop)
+	res.M_maxLength = math.Max(def.MaxLength, res.M_minLength)
 	res.M_stiffness = def.Stiffness
 	res.M_damping = def.Damping
-	res.M_impulse = 0.0
 	res.M_gamma = 0.0
 	res.M_bias = 0.0
+	res.M_impulse = 0.0
+	res.M_lowerImpulse = 0.0
+	res.M_upperImpulse = 0.0
+	res.M_currentLength = 0.0
 
 	return &res
 }
@@ -185,19 +244,29 @@ func (joint *B2DistanceJoint) InitVelocityConstraints(data B2SolverData) {
 	joint.M_u = B2Vec2Sub(B2Vec2Sub(B2Vec2Add(cB, joint.M_rB), cA), joint.M_rA)
 
 	// Handle singularity.
-	length := joint.M_u.Length()
-	if length > B2_linearSlop {
-		joint.M_u.OperatorScalarMulInplace(1.0 / length)
+	joint.M_currentLength = joint.M_u.Length()
+	if joint.M_currentLength > B2_linearSlop {
+		joint.M_u.OperatorScalarMulInplace(1.0 / joint.M_currentLength)
 	} else {
 		joint.M_u.Set(0.0, 0.0)
+		joint.M_mass = 0.0
+		joint.M_impulse = 0.0
+		joint.M_lowerImpulse = 0.0
+		joint.M_upperImpulse = 0.0
 	}
 
 	crAu := B2Vec2Cross(joint.M_rA, joint.M_u)
 	crBu := B2Vec2Cross(joint.M_rB, joint.M_u)
 	invMass := joint.M_invMassA + joint.M_invIA*crAu*crAu + joint.M_invMassB + joint.M_invIB*crBu*crBu
+	if invMass != 0.0 {
+		joint.M_mass = 1.0 / invMass
+	} else {
+		joint.M_mass = 0.0
+	}
 
-	if joint.M_stiffness > 0.0 {
-		C := length - joint.M_length
+	if joint.M_stiffness > 0.0 && joint.M_minLength < joint.M_maxLength {
+		// soft
+		C := joint.M_currentLength - joint.M_length
 
 		d := joint.M_damping
 		k := joint.M_stiffness
@@ -205,7 +274,8 @@ func (joint *B2DistanceJoint) InitVelocityConstraints(data B2SolverData) {
 		// magic formulas
 		h := data.Step.Dt
 
-		// gamma = 1 / (h * (d + h * k)), the extra factor of h in the denominator is since the lambda is an impulse, not a force
+		// gamma = 1 / (h * (d + h * k))
+		// the extra factor of h in the denominator is since the lambda is an impulse, not a force
 		joint.M_gamma = h * (d + h*k)
 		if joint.M_gamma != 0.0 {
 			joint.M_gamma = 1.0 / joint.M_gamma
@@ -216,25 +286,24 @@ func (joint *B2DistanceJoint) InitVelocityConstraints(data B2SolverData) {
 
 		invMass += joint.M_gamma
 		if invMass != 0.0 {
-			joint.M_mass = 1.0 / invMass
+			joint.M_softMass = 1.0 / invMass
 		} else {
-			joint.M_mass = 0.0
+			joint.M_softMass = 0.0
 		}
 	} else {
+		// rigid
 		joint.M_gamma = 0.0
 		joint.M_bias = 0.0
-		if invMass != 0.0 {
-			joint.M_mass = 1.0 / invMass
-		} else {
-			joint.M_mass = 0
-		}
+		joint.M_softMass = joint.M_mass
 	}
 
 	if data.Step.WarmStarting {
 		// Scale the impulse to support a variable time step.
 		joint.M_impulse *= data.Step.DtRatio
+		joint.M_lowerImpulse *= data.Step.DtRatio
+		joint.M_upperImpulse *= data.Step.DtRatio
 
-		P := B2Vec2MulScalar(joint.M_impulse, joint.M_u)
+		P := B2Vec2MulScalar(joint.M_impulse+joint.M_lowerImpulse-joint.M_upperImpulse, joint.M_u)
 		vA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
 		wA -= joint.M_invIA * B2Vec2Cross(joint.M_rA, P)
 		vB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
@@ -256,19 +325,81 @@ func (joint *B2DistanceJoint) SolveVelocityConstraints(data B2SolverData) {
 	vB := data.Velocities[joint.M_indexB].V
 	wB := data.Velocities[joint.M_indexB].W
 
-	// Cdot = dot(u, v + cross(w, r))
-	vpA := B2Vec2Add(vA, B2Vec2CrossScalarVector(wA, joint.M_rA))
-	vpB := B2Vec2Add(vB, B2Vec2CrossScalarVector(wB, joint.M_rB))
-	Cdot := B2Vec2Dot(joint.M_u, B2Vec2Sub(vpB, vpA))
+	if joint.M_minLength < joint.M_maxLength {
+		if joint.M_stiffness > 0.0 {
+			// Cdot = dot(u, v + cross(w, r))
+			vpA := B2Vec2Add(vA, B2Vec2CrossScalarVector(wA, joint.M_rA))
+			vpB := B2Vec2Add(vB, B2Vec2CrossScalarVector(wB, joint.M_rB))
+			Cdot := B2Vec2Dot(joint.M_u, B2Vec2Sub(vpB, vpA))
 
-	impulse := -joint.M_mass * (Cdot + joint.M_bias + joint.M_gamma*joint.M_impulse)
-	joint.M_impulse += impulse
+			impulse := -joint.M_softMass * (Cdot + joint.M_bias + joint.M_gamma*joint.M_impulse)
+			joint.M_impulse += impulse
 
-	P := B2Vec2MulScalar(impulse, joint.M_u)
-	vA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
-	wA -= joint.M_invIA * B2Vec2Cross(joint.M_rA, P)
-	vB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
-	wB += joint.M_invIB * B2Vec2Cross(joint.M_rB, P)
+			P := B2Vec2MulScalar(impulse, joint.M_u)
+			vA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
+			wA -= joint.M_invIA * B2Vec2Cross(joint.M_rA, P)
+			vB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
+			wB += joint.M_invIB * B2Vec2Cross(joint.M_rB, P)
+		}
+
+		// lower
+		{
+			C := joint.M_currentLength - joint.M_minLength
+			bias := math.Max(0.0, C) * data.Step.Inv_dt
+
+			vpA := B2Vec2Add(vA, B2Vec2CrossScalarVector(wA, joint.M_rA))
+			vpB := B2Vec2Add(vB, B2Vec2CrossScalarVector(wB, joint.M_rB))
+			Cdot := B2Vec2Dot(joint.M_u, B2Vec2Sub(vpB, vpA))
+
+			impulse := -joint.M_mass * (Cdot + bias)
+			oldImpulse := joint.M_lowerImpulse
+			joint.M_lowerImpulse = math.Max(0.0, joint.M_lowerImpulse+impulse)
+			impulse = joint.M_lowerImpulse - oldImpulse
+			P := B2Vec2MulScalar(impulse, joint.M_u)
+
+			vA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
+			wA -= joint.M_invIA * B2Vec2Cross(joint.M_rA, P)
+			vB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
+			wB += joint.M_invIB * B2Vec2Cross(joint.M_rB, P)
+		}
+
+		// upper
+		{
+			C := joint.M_maxLength - joint.M_currentLength
+			bias := math.Max(0.0, C) * data.Step.Inv_dt
+
+			vpA := B2Vec2Add(vA, B2Vec2CrossScalarVector(wA, joint.M_rA))
+			vpB := B2Vec2Add(vB, B2Vec2CrossScalarVector(wB, joint.M_rB))
+			Cdot := B2Vec2Dot(joint.M_u, B2Vec2Sub(vpA, vpB))
+
+			impulse := -joint.M_mass * (Cdot + bias)
+			oldImpulse := joint.M_upperImpulse
+			joint.M_upperImpulse = math.Max(0.0, joint.M_upperImpulse+impulse)
+			impulse = joint.M_upperImpulse - oldImpulse
+			P := B2Vec2MulScalar(-impulse, joint.M_u)
+
+			vA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
+			wA -= joint.M_invIA * B2Vec2Cross(joint.M_rA, P)
+			vB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
+			wB += joint.M_invIB * B2Vec2Cross(joint.M_rB, P)
+		}
+	} else {
+		// Equal limits
+
+		// Cdot = dot(u, v + cross(w, r))
+		vpA := B2Vec2Add(vA, B2Vec2CrossScalarVector(wA, joint.M_rA))
+		vpB := B2Vec2Add(vB, B2Vec2CrossScalarVector(wB, joint.M_rB))
+		Cdot := B2Vec2Dot(joint.M_u, B2Vec2Sub(vpB, vpA))
+
+		impulse := -joint.M_mass * Cdot
+		joint.M_impulse += impulse
+
+		P := B2Vec2MulScalar(impulse, joint.M_u)
+		vA.OperatorMinusInplace(B2Vec2MulScalar(joint.M_invMassA, P))
+		wA -= joint.M_invIA * B2Vec2Cross(joint.M_rA, P)
+		vB.OperatorPlusInplace(B2Vec2MulScalar(joint.M_invMassB, P))
+		wB += joint.M_invIB * B2Vec2Cross(joint.M_rB, P)
+	}
 
 	// Note: mutation on value, not ref; but OK because Velocities is an array
 	data.Velocities[joint.M_indexA].V = vA
@@ -278,11 +409,6 @@ func (joint *B2DistanceJoint) SolveVelocityConstraints(data B2SolverData) {
 }
 
 func (joint *B2DistanceJoint) SolvePositionConstraints(data B2SolverData) bool {
-	if joint.M_stiffness > 0.0 {
-		// There is no position correction for soft distance constraints.
-		return true
-	}
-
 	cA := data.Positions[joint.M_indexA].C
 	aA := data.Positions[joint.M_indexA].A
 	cB := data.Positions[joint.M_indexB].C
@@ -296,8 +422,16 @@ func (joint *B2DistanceJoint) SolvePositionConstraints(data B2SolverData) bool {
 	u := B2Vec2Sub(B2Vec2Sub(B2Vec2Add(cB, rB), cA), rA)
 
 	length := u.Normalize()
-	C := length - joint.M_length
-	C = B2FloatClamp(C, -B2_maxLinearCorrection, B2_maxLinearCorrection)
+	var C float64
+	if joint.M_minLength == joint.M_maxLength {
+		C = length - joint.M_minLength
+	} else if length < joint.M_minLength {
+		C = length - joint.M_minLength
+	} else if joint.M_maxLength < length {
+		C = length - joint.M_maxLength
+	} else {
+		return true
+	}
 
 	impulse := -joint.M_mass * C
 	P := B2Vec2MulScalar(impulse, u)
@@ -343,7 +477,45 @@ func (joint B2DistanceJoint) Dump() {
 	fmt.Printf("  jd.localAnchorA.Set(%.15f, %.15f);\n", joint.M_localAnchorA.X, joint.M_localAnchorA.Y)
 	fmt.Printf("  jd.localAnchorB.Set(%.15f, %.15f);\n", joint.M_localAnchorB.X, joint.M_localAnchorB.Y)
 	fmt.Printf("  jd.length = %.15f;\n", joint.M_length)
+	fmt.Printf("  jd.minLength = %.15f;\n", joint.M_minLength)
+	fmt.Printf("  jd.maxLength = %.15f;\n", joint.M_maxLength)
 	fmt.Printf("  jd.frequencyHz = %.15f;\n", joint.M_stiffness)
 	fmt.Printf("  jd.dampingRatio = %.15f;\n", joint.M_damping)
 	fmt.Printf("  joints[%d] = m_world.CreateJoint(&jd);\n", joint.M_index)
 }
+
+//void b2DistanceJoint::Draw(b2Draw* draw) const
+//{
+//	const b2Transform& xfA = m_bodyA->GetTransform();
+//	const b2Transform& xfB = m_bodyB->GetTransform();
+//	b2Vec2 pA = b2Mul(xfA, m_localAnchorA);
+//	b2Vec2 pB = b2Mul(xfB, m_localAnchorB);
+//
+//	b2Vec2 axis = pB - pA;
+//	float length = axis.Normalize();
+//
+//	b2Color c1(0.7f, 0.7f, 0.7f);
+//	b2Color c2(0.3f, 0.9f, 0.3f);
+//	b2Color c3(0.9f, 0.3f, 0.3f);
+//	b2Color c4(0.4f, 0.4f, 0.4f);
+//
+//	draw->DrawSegment(pA, pB, c4);
+//
+//	b2Vec2 pRest = pA + m_length * axis;
+//	draw->DrawPoint(pRest, 8.0f, c1);
+//
+//	if (m_minLength != m_maxLength)
+//	{
+//		if (m_minLength > b2_linearSlop)
+//		{
+//			b2Vec2 pMin = pA + m_minLength * axis;
+//			draw->DrawPoint(pMin, 4.0f, c2);
+//		}
+//
+//		if (m_maxLength < FLT_MAX)
+//		{
+//			b2Vec2 pMax = pA + m_maxLength * axis;
+//			draw->DrawPoint(pMax, 4.0f, c3);
+//		}
+//	}
+//}

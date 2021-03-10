@@ -11,7 +11,6 @@ var B2JointType = struct {
 	E_wheelJoint     uint8
 	E_weldJoint      uint8
 	E_frictionJoint  uint8
-	E_ropeJoint      uint8
 	E_motorJoint     uint8
 }{
 	E_unknownJoint:   1,
@@ -24,8 +23,7 @@ var B2JointType = struct {
 	E_wheelJoint:     8,
 	E_weldJoint:      9,
 	E_frictionJoint:  10,
-	E_ropeJoint:      11,
-	E_motorJoint:     12,
+	E_motorJoint:     11,
 }
 
 type B2Jacobian struct {
@@ -351,15 +349,6 @@ func B2JointCreate(def B2JointDefInterface) B2JointInterface { // def should be 
 		{
 			if typeddef, ok := def.(*B2FrictionJointDef); ok {
 				return MakeB2FrictionJoint(typeddef)
-			}
-
-			B2Assert(false)
-		}
-
-	case B2JointType.E_ropeJoint:
-		{
-			if typeddef, ok := def.(*B2RopeJointDef); ok {
-				return MakeB2RopeJoint(typeddef)
 			}
 
 			B2Assert(false)
