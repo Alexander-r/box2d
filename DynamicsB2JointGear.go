@@ -6,6 +6,7 @@ import (
 
 /// Gear joint definition. This definition requires two existing
 /// revolute or prismatic joints (any combination will work).
+/// @warning bodyB on the input joints must both be dynamic
 type B2GearJointDef struct {
 	B2JointDef
 
@@ -134,6 +135,9 @@ func MakeB2GearJoint(def *B2GearJointDef) *B2GearJoint {
 	res.M_bodyC = res.M_joint1.GetBodyA()
 	res.M_bodyA = res.M_joint1.GetBodyB()
 
+	// Body B on joint1 must be dynamic
+	B2Assert(res.M_bodyA.M_type == B2BodyType.B2_dynamicBody)
+
 	// Get geometry of joint1
 	xfA := res.M_bodyA.M_xf
 	aA := res.M_bodyA.M_sweep.A
@@ -162,6 +166,9 @@ func MakeB2GearJoint(def *B2GearJointDef) *B2GearJoint {
 
 	res.M_bodyD = res.M_joint2.GetBodyA()
 	res.M_bodyB = res.M_joint2.GetBodyB()
+
+	// Body B on joint2 must be dynamic
+	B2Assert(res.M_bodyB.M_type == B2BodyType.B2_dynamicBody)
 
 	// Get geometry of joint2
 	xfB := res.M_bodyB.M_xf
