@@ -102,4 +102,4 @@ type B2Version struct {
 	Revision int32
 }
 
-var B2_version B2Version = B2Version{2, 4, 0}
+var B2_version B2Version = B2Version{2, 4, 1}
