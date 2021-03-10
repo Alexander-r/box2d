@@ -553,7 +553,7 @@ func (joint B2PrismaticJoint) GetAnchorB() B2Vec2 {
 }
 
 func (joint B2PrismaticJoint) GetReactionForce(inv_dt float64) B2Vec2 {
-	return B2Vec2MulScalar(inv_dt, B2Vec2Add(B2Vec2MulScalar(joint.M_impulse.X, joint.M_perp), B2Vec2MulScalar(joint.M_motorImpulse+joint.M_lowerImpulse+joint.M_upperImpulse, joint.M_axis)))
+	return B2Vec2MulScalar(inv_dt, B2Vec2Add(B2Vec2MulScalar(joint.M_impulse.X, joint.M_perp), B2Vec2MulScalar(joint.M_motorImpulse+joint.M_lowerImpulse-joint.M_upperImpulse, joint.M_axis)))
 }
 
 func (joint B2PrismaticJoint) GetReactionTorque(inv_dt float64) float64 {

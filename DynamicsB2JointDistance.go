@@ -459,7 +459,7 @@ func (joint B2DistanceJoint) GetAnchorB() B2Vec2 {
 }
 
 func (joint B2DistanceJoint) GetReactionForce(inv_dt float64) B2Vec2 {
-	return B2Vec2MulScalar((inv_dt * joint.M_impulse), joint.M_u)
+	return B2Vec2MulScalar(inv_dt*(joint.M_impulse+joint.M_lowerImpulse-joint.M_upperImpulse), joint.M_u)
 }
 
 func (joint B2DistanceJoint) GetReactionTorque(inv_dt float64) float64 {

@@ -430,7 +430,7 @@ func (joint B2RevoluteJoint) GetReactionForce(inv_dt float64) B2Vec2 {
 }
 
 func (joint B2RevoluteJoint) GetReactionTorque(inv_dt float64) float64 {
-	return inv_dt * (joint.M_lowerImpulse + joint.M_upperImpulse)
+	return inv_dt * (joint.M_motorImpulse + joint.M_lowerImpulse - joint.M_upperImpulse)
 }
 
 func (joint B2RevoluteJoint) GetJointAngle() float64 {
