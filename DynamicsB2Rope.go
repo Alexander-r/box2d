@@ -18,12 +18,14 @@ var B2BendingModel = struct {
 	B2_xpbdAngleBendingModel   uint8
 	B2_pbdDistanceBendingModel uint8
 	B2_pbdHeightBendingModel   uint8
+	B2_pbdTriangleBendingModel uint8
 }{
 	B2_springAngleBendingModel: 1,
 	B2_pbdAngleBendingModel:    2,
 	B2_xpbdAngleBendingModel:   3,
 	B2_pbdDistanceBendingModel: 4,
 	B2_pbdHeightBendingModel:   5,
+	B2_pbdTriangleBendingModel: 6,
 }
 
 ///
@@ -370,6 +372,8 @@ func (rope *B2Rope) Step(dt float64, iterations int, position B2Vec2) {
 			rope.SolveBend_PBD_Distance()
 		} else if rope.M_tuning.BendingModel == B2BendingModel.B2_pbdHeightBendingModel {
 			rope.SolveBend_PBD_Height()
+		} else if rope.M_tuning.BendingModel == B2BendingModel.B2_pbdTriangleBendingModel {
+			rope.SolveBend_PBD_Triangle()
 		}
 
 		if rope.M_tuning.StretchingModel == B2StretchingModel.B2_pbdStretchingModel {
@@ -765,6 +769,40 @@ func (rope *B2Rope) SolveBend_PBD_Height() {
 		rope.M_ps[c.I1] = p1
 		rope.M_ps[c.I2] = p2
 		rope.M_ps[c.I3] = p3
+	}
+}
+
+// M. Kelager: A Triangle Bending Constraint Model for PBD
+func (rope *B2Rope) SolveBend_PBD_Triangle() {
+	stiffness := rope.M_tuning.BendStiffness
+
+	for i := 0; i < rope.M_bendCount; i++ {
+		c := &rope.M_bendConstraints[i]
+
+		b0 := rope.M_ps[c.I1]
+		v := rope.M_ps[c.I2]
+		b1 := rope.M_ps[c.I3]
+
+		wb0 := c.InvMass1
+		wv := c.InvMass2
+		wb1 := c.InvMass3
+
+		W := wb0 + wb1 + 2.0*wv
+		invW := stiffness / W
+
+		d := B2Vec2Sub(v, B2Vec2MulScalar(1.0/3.0, B2Vec2Add(B2Vec2Add(b0, v), b1)))
+
+		db0 := B2Vec2MulScalar(2.0*wb0*invW, d)
+		dv := B2Vec2MulScalar(-4.0*wv*invW, d)
+		db1 := B2Vec2MulScalar(2.0*wb1*invW, d)
+
+		b0.OperatorPlusInplace(db0)
+		v.OperatorPlusInplace(dv)
+		b1.OperatorPlusInplace(db1)
+
+		rope.M_ps[c.I1] = b0
+		rope.M_ps[c.I2] = v
+		rope.M_ps[c.I3] = b1
 	}
 }
 
