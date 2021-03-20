@@ -2,6 +2,8 @@ Box2D Go (port)
 
 Copyright (c) 2017 Byte Arena http://bytearena.com
 
+Copyright (c) 2020-2021 Alexander R.
+
 Zlib software license.
 
 This software is provided 'as-is', without any express or implied
