@@ -1,4 +1,4 @@
-# Box2D.go
+# Box2D Go port
 
 ## What is this ?
 
@@ -44,4 +44,4 @@ The original Box2D is developed by Erin Catto, and has the zlib license. Thank y
 
 ## License of this port (Go)
 
-Box2D.go has the zlib license. While the zlib license does not require acknowledgement, we encourage you to give credit to Box2D.go in your product.
+Box2D Go has the zlib license. While the zlib license does not require acknowledgement, we encourage you to give credit to Box2D Go in your product.

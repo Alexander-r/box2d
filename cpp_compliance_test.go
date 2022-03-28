@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/Alexander-r/box2d.go"
+	"github.com/Alexander-r/box2d"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
