@@ -2,6 +2,7 @@ package box2d
 
 import (
 	"fmt"
+	"math"
 )
 
 // Mouse joint definition. This requires a world target point,
@@ -188,7 +189,7 @@ func (joint *B2MouseJoint) InitVelocityConstraints(data B2SolverData) {
 	joint.M_C.OperatorScalarMulInplace(joint.M_beta)
 
 	// Cheat with some damping
-	wB *= 0.98
+	wB *= math.Max(0.0, 1.0-0.02*(60.0*data.Step.Dt))
 
 	if data.Step.WarmStarting {
 		joint.M_impulse.OperatorScalarMulInplace(data.Step.DtRatio)
