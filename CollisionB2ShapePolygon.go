@@ -144,116 +144,44 @@ func ComputeCentroid(vs []B2Vec2, count int) B2Vec2 {
 	return c
 }
 
-func (poly *B2PolygonShape) Set(vertices []B2Vec2, count int) {
-	B2Assert(3 <= count && count <= B2_maxPolygonVertices)
-	if count < 3 {
-		poly.SetAsBox(1.0, 1.0)
-		return
+// Create a convex hull from the given array of local points.
+// The count must be in the range [3, b2_maxPolygonVertices].
+// @warning the points may be re-ordered, even if they form a convex polygon
+// @warning collinear points are handled but not removed. Collinear points
+// may lead to poor stacking behavior.
+func (poly *B2PolygonShape) Set(vertices []B2Vec2, count int) bool {
+	hull := B2ComputeHull(vertices, count)
+
+	if hull.Count < 3 {
+		return false
 	}
 
-	n := MinInt(count, B2_maxPolygonVertices)
+	poly.SetAsHull(hull)
 
-	// Perform welding and copy vertices into local buffer.
-	ps := make([]B2Vec2, B2_maxPolygonVertices)
-	tempCount := 0
+	return true
+}
 
-	for i := 0; i < n; i++ {
-		v := vertices[i]
+// Create a polygon from a given convex hull (see b2ComputeHull).
+// @warning the hull must be valid or this will crash or have unexpected behavior
+func (poly *B2PolygonShape) SetAsHull(hull B2Hull) {
+	B2Assert(hull.Count >= 3)
 
-		unique := true
-		for j := 0; j < tempCount; j++ {
-			if B2Vec2DistanceSquared(v, ps[j]) < ((0.5 * B2_linearSlop) * (0.5 * B2_linearSlop)) {
-				unique = false
-				break
-			}
-		}
+	poly.M_count = hull.Count
 
-		if unique {
-			ps[tempCount] = v
-			tempCount++
-		}
-	}
-
-	n = tempCount
-	if n < 3 {
-		// Polygon is degenerate.
-		B2Assert(false)
-		poly.SetAsBox(1.0, 1.0)
-		return
-	}
-
-	// Create the convex hull using the Gift wrapping algorithm
-	// http://en.wikipedia.org/wiki/Gift_wrapping_algorithm
-
-	// Find the right most point on the hull
-	i0 := 0
-	x0 := ps[0].X
-	for i := 1; i < n; i++ {
-		x := ps[i].X
-		if x > x0 || (x == x0 && ps[i].Y < ps[i0].Y) {
-			i0 = i
-			x0 = x
-		}
-	}
-
-	hull := make([]int, B2_maxPolygonVertices)
-	m := 0
-	ih := i0
-
-	for {
-		B2Assert(m < B2_maxPolygonVertices)
-		hull[m] = ih
-
-		ie := 0
-		for j := 1; j < n; j++ {
-			if ie == ih {
-				ie = j
-				continue
-			}
-
-			r := B2Vec2Sub(ps[ie], ps[hull[m]])
-			v := B2Vec2Sub(ps[j], ps[hull[m]])
-			c := B2Vec2Cross(r, v)
-			if c < 0.0 {
-				ie = j
-			}
-
-			// Collinearity check
-			if c == 0.0 && v.LengthSquared() > r.LengthSquared() {
-				ie = j
-			}
-		}
-
-		m++
-		ih = ie
-
-		if ie == i0 {
-			break
-		}
-	}
-
-	if m < 3 {
-		// Polygon is degenerate.
-		B2Assert(false)
-		poly.SetAsBox(1.0, 1.0)
-		return
-	}
-
-	poly.M_count = m
-
-	// Copy vertices.
-	for i := 0; i < m; i++ {
-		poly.M_vertices[i] = ps[hull[i]]
+	// Copy vertices
+	for i := 0; i < hull.Count; i++ {
+		poly.M_vertices[i] = hull.Points[i]
 	}
 
 	// Compute normals. Ensure the edges have non-zero length.
-	for i := 0; i < m; i++ {
+	for i := 0; i < poly.M_count; i++ {
 		i1 := i
-		i2 := 0
-		if i+1 < m {
+		var i2 int
+		if i+1 < poly.M_count {
 			i2 = i + 1
+		} else {
+			i2 = 0
 		}
-
 		edge := B2Vec2Sub(poly.M_vertices[i2], poly.M_vertices[i1])
 		B2Assert(edge.LengthSquared() > B2_epsilon*B2_epsilon)
 		poly.M_normals[i] = B2Vec2CrossVectorScalar(edge, 1.0)
@@ -261,7 +189,7 @@ func (poly *B2PolygonShape) Set(vertices []B2Vec2, count int) {
 	}
 
 	// Compute the polygon centroid.
-	poly.M_centroid = ComputeCentroid(poly.M_vertices[:], m)
+	poly.M_centroid = ComputeCentroid(poly.M_vertices[:], poly.M_count)
 }
 
 func (poly B2PolygonShape) TestPoint(xf B2Transform, p B2Vec2) bool {
@@ -439,30 +367,16 @@ func (poly B2PolygonShape) ComputeMass(massData *B2MassData, density float64) {
 }
 
 func (poly B2PolygonShape) Validate() bool {
-
-	for i := 0; i < poly.M_count; i++ {
-		i1 := i
-		i2 := 0
-
-		if i < poly.M_count-1 {
-			i2 = i1 + 1
-		}
-
-		p := poly.M_vertices[i1]
-		e := B2Vec2Sub(poly.M_vertices[i2], p)
-
-		for j := 0; j < poly.M_count; j++ {
-			if j == i1 || j == i2 {
-				continue
-			}
-
-			v := B2Vec2Sub(poly.M_vertices[j], p)
-			c := B2Vec2Cross(e, v)
-			if c < 0.0 {
-				return false
-			}
-		}
+	if poly.M_count < 3 || B2_maxPolygonVertices < poly.M_count {
+		return false
 	}
 
-	return true
+	var hull B2Hull
+	for i := 0; i < poly.M_count; i++ {
+		hull.Points[i] = poly.M_vertices[i]
+	}
+
+	hull.Count = poly.M_count
+
+	return B2ValidateHull(&hull)
 }

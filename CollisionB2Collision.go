@@ -265,6 +265,12 @@ func B2TestOverlapBoundingBoxes(a, b B2AABB) bool {
 	return true
 }
 
+// Convex hull used for polygon collision
+type B2Hull struct {
+	Points [B2_maxPolygonVertices]B2Vec2
+	Count  int
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -503,4 +509,318 @@ func B2TestOverlapShapes(shapeA B2ShapeInterface, indexA int, shapeB B2ShapeInte
 	B2Distance(&output, &cache, &input)
 
 	return output.Distance < 10.0*B2_epsilon
+}
+
+// quickhull recursion
+func B2RecurseHull(p1 B2Vec2, p2 B2Vec2, ps []B2Vec2, count int) B2Hull {
+	var hull B2Hull
+	hull.Count = 0
+
+	if count == 0 {
+		return hull
+	}
+
+	// create an edge vector pointing from p1 to p2
+	e := B2Vec2Sub(p2, p1)
+	e.Normalize()
+
+	// discard points left of e and find point furthest to the right of e
+	rightPoints := make([]B2Vec2, B2_maxPolygonVertices)
+	rightCount := 0
+
+	bestIndex := 0
+	bestDistance := B2Vec2Cross(B2Vec2Sub(ps[bestIndex], p1), e)
+	if bestDistance > 0.0 {
+		rightPoints[rightCount] = ps[bestIndex]
+		rightCount++
+	}
+
+	for i := 1; i < count; i++ {
+		distance := B2Vec2Cross(B2Vec2Sub(ps[i], p1), e)
+		if distance > bestDistance {
+			bestIndex = i
+			bestDistance = distance
+		}
+
+		if distance > 0.0 {
+			rightPoints[rightCount] = ps[i]
+			rightCount++
+		}
+	}
+
+	if bestDistance < 2.0*B2_linearSlop {
+		return hull
+	}
+
+	bestPoint := ps[bestIndex]
+
+	// compute hull to the right of p1-bestPoint
+	hull1 := B2RecurseHull(p1, bestPoint, rightPoints, rightCount)
+
+	// compute hull to the right of bestPoint-p2
+	hull2 := B2RecurseHull(bestPoint, p2, rightPoints, rightCount)
+
+	// stich together hulls
+	for i := 0; i < hull1.Count; i++ {
+		hull.Points[hull.Count] = hull1.Points[i]
+		hull.Count++
+	}
+
+	hull.Points[hull.Count] = bestPoint
+	hull.Count++
+
+	for i := 0; i < hull2.Count; i++ {
+		hull.Points[hull.Count] = hull2.Points[i]
+		hull.Count++
+	}
+
+	B2Assert(hull.Count < B2_maxPolygonVertices)
+
+	return hull
+}
+
+// Compute the convex hull of a set of points. Returns an empty hull if it fails.
+// Some failure cases:
+// - all points very close together
+// - all points on a line
+// - less than 3 points
+// - more than b2_maxPolygonVertices points
+// This welds close points and removes collinear points.
+//
+// quickhull algorithm
+// - merges vertices based on b2_linearSlop
+// - removes collinear points using b2_linearSlop
+// - returns an empty hull if it fails
+func B2ComputeHull(points []B2Vec2, count int) B2Hull {
+	var hull B2Hull
+	hull.Count = 0
+
+	if count < 3 || count > B2_maxPolygonVertices {
+		// check your data
+		return hull
+	}
+
+	count = MinInt(count, B2_maxPolygonVertices)
+
+	aabb := B2AABB{
+		LowerBound: MakeB2Vec2(B2_maxFloat, B2_maxFloat),
+		UpperBound: MakeB2Vec2(-B2_maxFloat, -B2_maxFloat),
+	}
+
+	// Perform aggressive point welding. First point always remains.
+	// Also compute the bounding box for later.
+	var ps [B2_maxPolygonVertices]B2Vec2
+	n := 0
+	tolSqr := 16.0 * B2_linearSlop * B2_linearSlop
+	for i := 0; i < count; i++ {
+		aabb.LowerBound = B2Vec2Min(aabb.LowerBound, points[i])
+		aabb.UpperBound = B2Vec2Max(aabb.UpperBound, points[i])
+
+		vi := points[i]
+
+		unique := true
+		for j := 0; j < i; j++ {
+			vj := points[j]
+
+			distSqr := B2Vec2DistanceSquared(vi, vj)
+			if distSqr < tolSqr {
+				unique = false
+				break
+			}
+		}
+
+		if unique {
+			ps[n] = vi
+			n++
+		}
+	}
+
+	if n < 3 {
+		// all points very close together, check your data and check your scale
+		return hull
+	}
+
+	// Find an extreme point as the first point on the hull
+	c := aabb.GetCenter()
+	i1 := 0
+	dsq1 := B2Vec2DistanceSquared(c, ps[i1])
+	for i := 1; i < n; i++ {
+		dsq := B2Vec2DistanceSquared(c, ps[i])
+		if dsq > dsq1 {
+			i1 = i
+			dsq1 = dsq
+		}
+	}
+
+	// remove p1 from working set
+	p1 := ps[i1]
+	ps[i1] = ps[n-1]
+	n = n - 1
+
+	i2 := 0
+	dsq2 := B2Vec2DistanceSquared(p1, ps[i2])
+	for i := 1; i < n; i++ {
+		dsq := B2Vec2DistanceSquared(p1, ps[i])
+		if dsq > dsq2 {
+			i2 = i
+			dsq2 = dsq
+		}
+	}
+
+	// remove p2 from working set
+	p2 := ps[i2]
+	ps[i2] = ps[n-1]
+	n = n - 1
+
+	// split the points into points that are left and right of the line p1-p2.
+	rightPoints := make([]B2Vec2, B2_maxPolygonVertices-2)
+	rightCount := 0
+
+	leftPoints := make([]B2Vec2, B2_maxPolygonVertices-2)
+	leftCount := 0
+
+	e := B2Vec2Sub(p2, p1)
+	e.Normalize()
+
+	for i := 0; i < n; i++ {
+		d := B2Vec2Cross(B2Vec2Sub(ps[i], p1), e)
+
+		// slop used here to skip points that are very close to the line p1-p2
+		if d >= 2.0*B2_linearSlop {
+			rightPoints[rightCount] = ps[i]
+			rightCount++
+		} else if d <= -2.0*B2_linearSlop {
+			leftPoints[leftCount] = ps[i]
+			leftCount++
+		}
+	}
+
+	// compute hulls on right and left
+	hull1 := B2RecurseHull(p1, p2, rightPoints, rightCount)
+	hull2 := B2RecurseHull(p2, p1, leftPoints, leftCount)
+
+	if hull1.Count == 0 && hull2.Count == 0 {
+		// all points collinear
+		return hull
+	}
+
+	// stitch hulls together, preserving CCW winding order
+	hull.Points[hull.Count] = p1
+	hull.Count++
+
+	for i := 0; i < hull1.Count; i++ {
+		hull.Points[hull.Count] = hull1.Points[i]
+		hull.Count++
+	}
+
+	hull.Points[hull.Count] = p2
+	hull.Count++
+
+	for i := 0; i < hull2.Count; i++ {
+		hull.Points[hull.Count] = hull2.Points[i]
+		hull.Count++
+	}
+
+	B2Assert(hull.Count <= B2_maxPolygonVertices)
+
+	// merge collinear
+	searching := true
+	for searching && hull.Count > 2 {
+		searching = false
+
+		for i := 0; i < hull.Count; i++ {
+			i1 := i
+			i2 := (i + 1) % hull.Count
+			i3 := (i + 2) % hull.Count
+
+			p1 := hull.Points[i1]
+			p2 := hull.Points[i2]
+			p3 := hull.Points[i3]
+
+			e = B2Vec2Sub(p3, p1)
+			e.Normalize()
+
+			//v := B2Vec2Sub(p2, p1)
+			distance := B2Vec2Cross(B2Vec2Sub(p2, p1), e)
+			if distance <= 2.0*B2_linearSlop {
+				// remove midpoint from hull
+				for j := i2; j < hull.Count-1; j++ {
+					hull.Points[j] = hull.Points[j+1]
+				}
+				hull.Count -= 1
+
+				// continue searching for collinear points
+				searching = true
+
+				break
+			}
+		}
+	}
+
+	if hull.Count < 3 {
+		// all points collinear, shouldn't be reached since this was validated above
+		hull.Count = 0
+	}
+
+	return hull
+}
+
+// This determines if a hull is valid. Checks for:
+// - convexity
+// - collinear points
+// This is expensive and should not be called at runtime.
+func B2ValidateHull(hull *B2Hull) bool {
+	if hull.Count < 3 || B2_maxPolygonVertices < hull.Count {
+		return false
+	}
+
+	// test that every point is behind every edge
+	for i := 0; i < hull.Count; i++ {
+		// create an edge vector
+		i1 := i
+		var i2 int
+		if i < hull.Count-1 {
+			i2 = i1 + 1
+		} else {
+			i2 = 0
+		}
+		p := hull.Points[i1]
+		e := B2Vec2Sub(hull.Points[i2], p)
+		e.Normalize()
+
+		for j := 0; j < hull.Count; j++ {
+			// skip points that subtend the current edge
+			if j == i1 || j == i2 {
+				continue
+			}
+
+			distance := B2Vec2Cross(B2Vec2Sub(hull.Points[j], p), e)
+			if distance >= 0.0 {
+				return false
+			}
+		}
+	}
+
+	// test for collinear points
+	for i := 0; i < hull.Count; i++ {
+		i1 := i
+		i2 := (i + 1) % hull.Count
+		i3 := (i + 2) % hull.Count
+
+		p1 := hull.Points[i1]
+		p2 := hull.Points[i2]
+		p3 := hull.Points[i3]
+
+		e := B2Vec2Sub(p3, p1)
+		e.Normalize()
+
+		//v := B2Vec2Sub(p2, p1)
+		distance := B2Vec2Cross(B2Vec2Sub(p2, p1), e)
+		if distance <= B2_linearSlop {
+			// p1-p2-p3 are collinear
+			return false
+		}
+	}
+
+	return true
 }
