@@ -4,10 +4,10 @@ import (
 	"fmt"
 )
 
-/// The body type.
-/// static: zero mass, zero velocity, may be manually moved
-/// kinematic: zero mass, non-zero velocity set by user, moved by solver
-/// dynamic: positive mass, non-zero velocity determined by forces, moved by solver
+// The body type.
+// static: zero mass, zero velocity, may be manually moved
+// kinematic: zero mass, non-zero velocity set by user, moved by solver
+// dynamic: positive mass, non-zero velocity determined by forces, moved by solver
 
 var B2BodyType = struct {
 	B2_staticBody    uint8
@@ -19,66 +19,66 @@ var B2BodyType = struct {
 	B2_dynamicBody:   2,
 }
 
-/// A body definition holds all the data needed to construct a rigid body.
-/// You can safely re-use body definitions. Shapes are added to a body after construction.
+// A body definition holds all the data needed to construct a rigid body.
+// You can safely re-use body definitions. Shapes are added to a body after construction.
 type B2BodyDef struct {
 
-	/// The body type: static, kinematic, or dynamic.
-	/// Note: if a dynamic body would have zero mass, the mass is set to one.
+	// The body type: static, kinematic, or dynamic.
+	// Note: if a dynamic body would have zero mass, the mass is set to one.
 	Type uint8
 
-	/// The world position of the body. Avoid creating bodies at the origin
-	/// since this can lead to many overlapping shapes.
+	// The world position of the body. Avoid creating bodies at the origin
+	// since this can lead to many overlapping shapes.
 	Position B2Vec2
 
-	/// The world angle of the body in radians.
+	// The world angle of the body in radians.
 	Angle float64
 
-	/// The linear velocity of the body's origin in world co-ordinates.
+	// The linear velocity of the body's origin in world co-ordinates.
 	LinearVelocity B2Vec2
 
-	/// The angular velocity of the body.
+	// The angular velocity of the body.
 	AngularVelocity float64
 
-	/// Linear damping is use to reduce the linear velocity. The damping parameter
-	/// can be larger than 1.0 but the damping effect becomes sensitive to the
-	/// time step when the damping parameter is large.
-	/// Units are 1/time
+	// Linear damping is use to reduce the linear velocity. The damping parameter
+	// can be larger than 1.0 but the damping effect becomes sensitive to the
+	// time step when the damping parameter is large.
+	// Units are 1/time
 	LinearDamping float64
 
-	/// Angular damping is use to reduce the angular velocity. The damping parameter
-	/// can be larger than 1.0 but the damping effect becomes sensitive to the
-	/// time step when the damping parameter is large.
-	/// Units are 1/time
+	// Angular damping is use to reduce the angular velocity. The damping parameter
+	// can be larger than 1.0 but the damping effect becomes sensitive to the
+	// time step when the damping parameter is large.
+	// Units are 1/time
 	AngularDamping float64
 
-	/// Set this flag to false if this body should never fall asleep. Note that
-	/// this increases CPU usage.
+	// Set this flag to false if this body should never fall asleep. Note that
+	// this increases CPU usage.
 	AllowSleep bool
 
-	/// Is this body initially awake or sleeping?
+	// Is this body initially awake or sleeping?
 	Awake bool
 
-	/// Should this body be prevented from rotating? Useful for characters.
+	// Should this body be prevented from rotating? Useful for characters.
 	FixedRotation bool
 
-	/// Is this a fast moving body that should be prevented from tunneling through
-	/// other moving bodies? Note that all bodies are prevented from tunneling through
-	/// kinematic and static bodies. This setting is only considered on dynamic bodies.
-	/// @warning You should use this flag sparingly since it increases processing time.
+	// Is this a fast moving body that should be prevented from tunneling through
+	// other moving bodies? Note that all bodies are prevented from tunneling through
+	// kinematic and static bodies. This setting is only considered on dynamic bodies.
+	// @warning You should use this flag sparingly since it increases processing time.
 	Bullet bool
 
-	/// Does this body start out enabled?
+	// Does this body start out enabled?
 	Enabled bool
 
-	/// Use this to store application specific body data.
+	// Use this to store application specific body data.
 	UserData interface{}
 
-	/// Scale the gravity applied to this body.
+	// Scale the gravity applied to this body.
 	GravityScale float64
 }
 
-/// This constructor sets the body definition default values.
+// This constructor sets the body definition default values.
 func MakeB2BodyDef() B2BodyDef {
 	return B2BodyDef{
 		UserData:        nil,

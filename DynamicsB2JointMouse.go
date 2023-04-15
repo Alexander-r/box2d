@@ -4,24 +4,24 @@ import (
 	"fmt"
 )
 
-/// Mouse joint definition. This requires a world target point,
-/// tuning parameters, and the time step.
+// Mouse joint definition. This requires a world target point,
+// tuning parameters, and the time step.
 type B2MouseJointDef struct {
 	B2JointDef
 
-	/// The initial world target point. This is assumed
-	/// to coincide with the body anchor initially.
+	// The initial world target point. This is assumed
+	// to coincide with the body anchor initially.
 	Target B2Vec2
 
-	/// The maximum constraint force that can be exerted
-	/// to move the candidate body. Usually you will express
-	/// as some multiple of the weight (multiplier * mass * gravity).
+	// The maximum constraint force that can be exerted
+	// to move the candidate body. Usually you will express
+	// as some multiple of the weight (multiplier * mass * gravity).
 	MaxForce float64
 
-	/// The linear stiffness in N/m
+	// The linear stiffness in N/m
 	Stiffness float64
 
-	/// The linear damping in N*s/m
+	// The linear damping in N*s/m
 	Damping float64
 }
 
@@ -39,13 +39,13 @@ func MakeB2MouseJointDef() B2MouseJointDef {
 	return res
 }
 
-/// A mouse joint is used to make a point on a body track a
-/// specified world point. This a soft constraint with a maximum
-/// force. This allows the constraint to stretch and without
-/// applying huge forces.
-/// NOTE: this joint is not documented in the manual because it was
-/// developed to be used in the testbed. If you want to learn how to
-/// use the mouse joint, look at the testbed.
+// A mouse joint is used to make a point on a body track a
+// specified world point. This a soft constraint with a maximum
+// force. This allows the constraint to stretch and without
+// applying huge forces.
+// NOTE: this joint is not documented in the manual because it was
+// developed to be used in the testbed. If you want to learn how to
+// use the mouse joint, look at the testbed.
 type B2MouseJoint struct {
 	*B2Joint
 
@@ -71,7 +71,7 @@ type B2MouseJoint struct {
 	M_C            B2Vec2
 }
 
-/// The mouse joint does not support dumping.
+// The mouse joint does not support dumping.
 func (def *B2MouseJoint) Dump() {
 	fmt.Printf("Mouse joint dumping is not supported.\n")
 }
@@ -109,37 +109,37 @@ func (joint *B2MouseJoint) SetTarget(target B2Vec2) {
 	}
 }
 
-/// Use this to update the target point.
+// Use this to update the target point.
 func (joint B2MouseJoint) GetTarget() B2Vec2 {
 	return joint.M_targetA
 }
 
-/// Set the maximum force in Newtons.
+// Set the maximum force in Newtons.
 func (joint *B2MouseJoint) SetMaxForce(force float64) {
 	joint.M_maxForce = force
 }
 
-/// Get the maximum force in Newtons.
+// Get the maximum force in Newtons.
 func (joint B2MouseJoint) GetMaxForce() float64 {
 	return joint.M_maxForce
 }
 
-/// Set the linear stiffness in N/m
+// Set the linear stiffness in N/m
 func (joint *B2MouseJoint) SetStiffness(stiffness float64) {
 	joint.M_stiffness = stiffness
 }
 
-/// Get the linear stiffness in N/m
+// Get the linear stiffness in N/m
 func (joint B2MouseJoint) GetStiffness() float64 {
 	return joint.M_stiffness
 }
 
-/// Set linear damping in N*s/m
+// Set linear damping in N*s/m
 func (joint *B2MouseJoint) SetDamping(damping float64) {
 	joint.M_damping = damping
 }
 
-/// Get linear damping in N*s/m
+// Get linear damping in N*s/m
 func (joint B2MouseJoint) GetDamping() float64 {
 	return joint.M_damping
 }

@@ -4,18 +4,18 @@ import (
 	"fmt"
 )
 
-/// This holds contact filtering data.
+// This holds contact filtering data.
 type B2Filter struct {
-	/// The collision category bits. Normally you would just set one bit.
+	// The collision category bits. Normally you would just set one bit.
 	CategoryBits uint16
 
-	/// The collision mask bits. This states the categories that this
-	/// shape would accept for collision.
+	// The collision mask bits. This states the categories that this
+	// shape would accept for collision.
 	MaskBits uint16
 
-	/// Collision groups allow a certain group of objects to never collide (negative)
-	/// or always collide (positive). Zero means no collision group. Non-zero group
-	/// filtering always wins against the mask bits.
+	// Collision groups allow a certain group of objects to never collide (negative)
+	// or always collide (positive). Zero means no collision group. Non-zero group
+	// filtering always wins against the mask bits.
 	GroupIndex int16
 }
 
@@ -27,39 +27,39 @@ func MakeB2Filter() B2Filter {
 	}
 }
 
-/// A fixture definition is used to create a fixture. This class defines an
-/// abstract fixture definition. You can reuse fixture definitions safely.
+// A fixture definition is used to create a fixture. This class defines an
+// abstract fixture definition. You can reuse fixture definitions safely.
 type B2FixtureDef struct {
 
-	/// The shape, this must be set. The shape will be cloned, so you
-	/// can create the shape on the stack.
+	// The shape, this must be set. The shape will be cloned, so you
+	// can create the shape on the stack.
 	Shape B2ShapeInterface
 
-	/// Use this to store application specific fixture data.
+	// Use this to store application specific fixture data.
 	UserData interface{}
 
-	/// The friction coefficient, usually in the range [0,1].
+	// The friction coefficient, usually in the range [0,1].
 	Friction float64
 
-	/// The restitution (elasticity) usually in the range [0,1].
+	// The restitution (elasticity) usually in the range [0,1].
 	Restitution float64
 
-	/// Restitution velocity threshold, usually in m/s. Collisions above this
-	/// speed have restitution applied (will bounce).
+	// Restitution velocity threshold, usually in m/s. Collisions above this
+	// speed have restitution applied (will bounce).
 	RestitutionThreshold float64
 
-	/// The density, usually in kg/m^2.
+	// The density, usually in kg/m^2.
 	Density float64
 
-	/// A sensor shape collects contact information but never generates a collision
-	/// response.
+	// A sensor shape collects contact information but never generates a collision
+	// response.
 	IsSensor bool
 
-	/// Contact filtering data.
+	// Contact filtering data.
 	Filter B2Filter
 }
 
-/// The constructor sets the default fixture definition values.
+// The constructor sets the default fixture definition values.
 func MakeB2FixtureDef() B2FixtureDef {
 	return B2FixtureDef{
 		Shape:                nil,
@@ -73,7 +73,7 @@ func MakeB2FixtureDef() B2FixtureDef {
 	}
 }
 
-/// This proxy is used internally to connect fixtures to the broad-phase.
+// This proxy is used internally to connect fixtures to the broad-phase.
 type B2FixtureProxy struct {
 	Aabb       B2AABB
 	Fixture    *B2Fixture
@@ -81,11 +81,11 @@ type B2FixtureProxy struct {
 	ProxyId    int
 }
 
-// /// A fixture is used to attach a shape to a body for collision detection. A fixture
-// /// inherits its transform from its parent. Fixtures hold additional non-geometric data
-// /// such as friction, collision filters, etc.
-// /// Fixtures are created via b2Body::CreateFixture.
-// /// @warning you cannot reuse fixtures.
+// A fixture is used to attach a shape to a body for collision detection. A fixture
+// inherits its transform from its parent. Fixtures hold additional non-geometric data
+// such as friction, collision filters, etc.
+// Fixtures are created via b2Body::CreateFixture.
+// @warning you cannot reuse fixtures.
 type B2Fixture struct {
 	M_density float64
 
@@ -148,47 +148,47 @@ func (fix B2Fixture) GetNext() *B2Fixture {
 	return fix.M_next
 }
 
-/// Set the density of this fixture. This will _not_ automatically adjust the mass
-/// of the body. You must call b2Body::ResetMassData to update the body's mass.
+// Set the density of this fixture. This will _not_ automatically adjust the mass
+// of the body. You must call b2Body::ResetMassData to update the body's mass.
 func (fix *B2Fixture) SetDensity(density float64) {
 	B2Assert(B2IsValid(density) && density >= 0.0)
 	fix.M_density = density
 }
 
-/// Get the density of this fixture.
+// Get the density of this fixture.
 func (fix B2Fixture) GetDensity() float64 {
 	return fix.M_density
 }
 
-/// Get the coefficient of friction.
+// Get the coefficient of friction.
 func (fix B2Fixture) GetFriction() float64 {
 	return fix.M_friction
 }
 
-/// Set the coefficient of friction. This will _not_ change the friction of
-/// existing contacts.
+// Set the coefficient of friction. This will _not_ change the friction of
+// existing contacts.
 func (fix *B2Fixture) SetFriction(friction float64) {
 	fix.M_friction = friction
 }
 
-/// Get the coefficient of restitution.
+// Get the coefficient of restitution.
 func (fix B2Fixture) GetRestitution() float64 {
 	return fix.M_restitution
 }
 
-/// Set the coefficient of restitution. This will _not_ change the restitution of
-/// existing contacts.
+// Set the coefficient of restitution. This will _not_ change the restitution of
+// existing contacts.
 func (fix *B2Fixture) SetRestitution(restitution float64) {
 	fix.M_restitution = restitution
 }
 
-/// Get the restitution velocity threshold.
+// Get the restitution velocity threshold.
 func (fix B2Fixture) GetRestitutionThreshold() float64 {
 	return fix.M_restitutionThreshold
 }
 
-/// Set the restitution threshold. This will _not_ change the restitution threshold of
-/// existing contacts.
+// Set the restitution threshold. This will _not_ change the restitution threshold of
+// existing contacts.
 func (fix *B2Fixture) SetRestitutionThreshold(threshold float64) {
 	fix.M_restitutionThreshold = threshold
 }
@@ -205,9 +205,9 @@ func (fix B2Fixture) GetMassData(massData *B2MassData) {
 	fix.M_shape.ComputeMass(massData, fix.M_density)
 }
 
-/// Get the fixture's AABB. This AABB may be enlarge and/or stale.
-/// If you need a more accurate AABB, compute it using the shape and
-/// the body transform.
+// Get the fixture's AABB. This AABB may be enlarge and/or stale.
+// If you need a more accurate AABB, compute it using the shape and
+// the body transform.
 func (fix B2Fixture) GetAABB(childIndex int) B2AABB {
 	B2Assert(0 <= childIndex && childIndex < fix.M_proxyCount)
 	return fix.M_proxies[childIndex].Aabb

@@ -4,23 +4,23 @@ import (
 	"fmt"
 )
 
-/// Motor joint definition.
+// Motor joint definition.
 type B2MotorJointDef struct {
 	B2JointDef
 
-	/// Position of bodyB minus the position of bodyA, in bodyA's frame, in meters.
+	// Position of bodyB minus the position of bodyA, in bodyA's frame, in meters.
 	LinearOffset B2Vec2
 
-	/// The bodyB angle minus bodyA angle in radians.
+	// The bodyB angle minus bodyA angle in radians.
 	AngularOffset float64
 
-	/// The maximum motor force in N.
+	// The maximum motor force in N.
 	MaxForce float64
 
-	/// The maximum motor torque in N-m.
+	// The maximum motor torque in N-m.
 	MaxTorque float64
 
-	/// Position correction factor in the range [0,1].
+	// Position correction factor in the range [0,1].
 	CorrectionFactor float64
 }
 
@@ -35,9 +35,9 @@ func MakeB2MotorJointDef() B2MotorJointDef {
 	return res
 }
 
-/// A motor joint is used to control the relative motion
-/// between two bodies. A typical usage is to control the movement
-/// of a dynamic body with respect to the ground.
+// A motor joint is used to control the relative motion
+// between two bodies. A typical usage is to control the movement
+// of a dynamic body with respect to the ground.
 type B2MotorJoint struct {
 	*B2Joint
 

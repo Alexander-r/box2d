@@ -28,7 +28,6 @@ var B2BendingModel = struct {
 	B2_pbdTriangleBendingModel: 6,
 }
 
-///
 type B2RopeTuning struct {
 	StretchingModel    uint8
 	BendingModel       uint8
@@ -61,7 +60,6 @@ func MakeB2RopeTuning() B2RopeTuning {
 	return res
 }
 
-///
 type B2RopeDef struct {
 	Position B2Vec2
 	Vertices []B2Vec2
@@ -112,7 +110,6 @@ type B2RopeBend struct {
 	Damper           float64
 }
 
-///
 type B2Rope struct {
 	M_position B2Vec2
 
@@ -134,12 +131,10 @@ type B2Rope struct {
 	M_tuning B2RopeTuning
 }
 
-///
 func (rope B2Rope) GetVertexCount() int {
 	return rope.M_count
 }
 
-///
 func (rope B2Rope) GetVertices() []B2Vec2 {
 	return rope.M_ps
 }

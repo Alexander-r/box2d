@@ -5,45 +5,45 @@ import (
 	"math"
 )
 
-/// Revolute joint definition. This requires defining an anchor point where the
-/// bodies are joined. The definition uses local anchor points so that the
-/// initial configuration can violate the constraint slightly. You also need to
-/// specify the initial relative angle for joint limits. This helps when saving
-/// and loading a game.
-/// The local anchor points are measured from the body's origin
-/// rather than the center of mass because:
-/// 1. you might not know where the center of mass will be.
-/// 2. if you add/remove shapes from a body and recompute the mass,
-///    the joints will be broken.
+// Revolute joint definition. This requires defining an anchor point where the
+// bodies are joined. The definition uses local anchor points so that the
+// initial configuration can violate the constraint slightly. You also need to
+// specify the initial relative angle for joint limits. This helps when saving
+// and loading a game.
+// The local anchor points are measured from the body's origin
+// rather than the center of mass because:
+//  1. you might not know where the center of mass will be.
+//  2. if you add/remove shapes from a body and recompute the mass,
+//     the joints will be broken.
 type B2RevoluteJointDef struct {
 	B2JointDef
 
-	/// The local anchor point relative to bodyA's origin.
+	// The local anchor point relative to bodyA's origin.
 	LocalAnchorA B2Vec2
 
-	/// The local anchor point relative to bodyB's origin.
+	// The local anchor point relative to bodyB's origin.
 	LocalAnchorB B2Vec2
 
-	/// The bodyB angle minus bodyA angle in the reference state (radians).
+	// The bodyB angle minus bodyA angle in the reference state (radians).
 	ReferenceAngle float64
 
-	/// A flag to enable joint limits.
+	// A flag to enable joint limits.
 	EnableLimit bool
 
-	/// The lower angle for the joint limit (radians).
+	// The lower angle for the joint limit (radians).
 	LowerAngle float64
 
-	/// The upper angle for the joint limit (radians).
+	// The upper angle for the joint limit (radians).
 	UpperAngle float64
 
-	/// A flag to enable the joint motor.
+	// A flag to enable the joint motor.
 	EnableMotor bool
 
-	/// The desired motor speed. Usually in radians per second.
+	// The desired motor speed. Usually in radians per second.
 	MotorSpeed float64
 
-	/// The maximum motor torque used to achieve the desired motor speed.
-	/// Usually in N-m.
+	// The maximum motor torque used to achieve the desired motor speed.
+	// Usually in N-m.
 	MaxMotorTorque float64
 }
 
@@ -66,12 +66,12 @@ func MakeB2RevoluteJointDef() B2RevoluteJointDef {
 	return res
 }
 
-/// A revolute joint constrains two bodies to share a common point while they
-/// are free to rotate about the point. The relative rotation about the shared
-/// point is the joint angle. You can limit the relative rotation with
-/// a joint limit that specifies a lower and upper angle. You can use a motor
-/// to drive the relative rotation about the shared point. A maximum motor torque
-/// is provided so that infinite forces are not generated.
+// A revolute joint constrains two bodies to share a common point while they
+// are free to rotate about the point. The relative rotation about the shared
+// point is the joint angle. You can limit the relative rotation with
+// a joint limit that specifies a lower and upper angle. You can use a motor
+// to drive the relative rotation about the shared point. A maximum motor torque
+// is provided so that infinite forces are not generated.
 type B2RevoluteJoint struct {
 	*B2Joint
 
@@ -106,17 +106,17 @@ type B2RevoluteJoint struct {
 	M_axialMass    float64
 }
 
-/// The local anchor point relative to bodyA's origin.
+// The local anchor point relative to bodyA's origin.
 func (joint B2RevoluteJoint) GetLocalAnchorA() B2Vec2 {
 	return joint.M_localAnchorA
 }
 
-/// The local anchor point relative to bodyB's origin.
+// The local anchor point relative to bodyB's origin.
 func (joint B2RevoluteJoint) GetLocalAnchorB() B2Vec2 {
 	return joint.M_localAnchorB
 }
 
-/// Get the reference angle.
+// Get the reference angle.
 func (joint B2RevoluteJoint) GetReferenceAngle() float64 {
 	return joint.M_referenceAngle
 }

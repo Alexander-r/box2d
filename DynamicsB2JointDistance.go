@@ -5,32 +5,32 @@ import (
 	"math"
 )
 
-/// Distance joint definition. This requires defining an anchor point on both
-/// bodies and the non-zero distance of the distance joint. The definition uses
-/// local anchor points so that the initial configuration can violate the
-/// constraint slightly. This helps when saving and loading a game.
+// Distance joint definition. This requires defining an anchor point on both
+// bodies and the non-zero distance of the distance joint. The definition uses
+// local anchor points so that the initial configuration can violate the
+// constraint slightly. This helps when saving and loading a game.
 type B2DistanceJointDef struct {
 	B2JointDef
 
-	/// The local anchor point relative to bodyA's origin.
+	// The local anchor point relative to bodyA's origin.
 	LocalAnchorA B2Vec2
 
-	/// The local anchor point relative to bodyB's origin.
+	// The local anchor point relative to bodyB's origin.
 	LocalAnchorB B2Vec2
 
-	/// The rest length of this joint. Clamped to a stable minimum value.
+	// The rest length of this joint. Clamped to a stable minimum value.
 	Length float64
 
-	/// Minimum length. Clamped to a stable minimum value.
+	// Minimum length. Clamped to a stable minimum value.
 	MinLength float64
 
-	/// Maximum length. Must be greater than or equal to the minimum length.
+	// Maximum length. Must be greater than or equal to the minimum length.
 	MaxLength float64
 
-	/// The linear stiffness in N/m.
+	// The linear stiffness in N/m.
 	Stiffness float64
 
-	/// The linear damping in N*s/m.
+	// The linear damping in N*s/m.
 	Damping float64
 }
 
@@ -51,8 +51,8 @@ func MakeB2DistanceJointDef() B2DistanceJointDef {
 	return res
 }
 
-/// A distance joint constrains two points on two bodies to remain at a fixed
-/// distance from each other. You can view this as a massless, rigid rod.
+// A distance joint constrains two points on two bodies to remain at a fixed
+// distance from each other. You can view this as a massless, rigid rod.
 type B2DistanceJoint struct {
 	*B2Joint
 
@@ -88,56 +88,56 @@ type B2DistanceJoint struct {
 	M_mass          float64
 }
 
-/// The local anchor point relative to bodyA's origin.
+// The local anchor point relative to bodyA's origin.
 func (joint B2DistanceJoint) GetLocalAnchorA() B2Vec2 {
 	return joint.M_localAnchorA
 }
 
-/// The local anchor point relative to bodyB's origin.
+// The local anchor point relative to bodyB's origin.
 func (joint B2DistanceJoint) GetLocalAnchorB() B2Vec2 {
 	return joint.M_localAnchorB
 }
 
-/// Get the rest length
+// Get the rest length
 func (joint B2DistanceJoint) GetLength() float64 {
 	return joint.M_length
 }
 
-/// Set the rest length
-/// @returns clamped rest length
+// Set the rest length
+// @returns clamped rest length
 func (joint *B2DistanceJoint) SetLength(length float64) float64 {
 	joint.M_impulse = 0.0
 	joint.M_length = math.Max(B2_linearSlop, length)
 	return joint.M_length
 }
 
-/// Get the minimum length
+// Get the minimum length
 func (joint B2DistanceJoint) GetMinLength() float64 {
 	return joint.M_minLength
 }
 
-/// Set the minimum length
-/// @returns the clamped minimum length
+// Set the minimum length
+// @returns the clamped minimum length
 func (joint *B2DistanceJoint) SetMinLength(minLength float64) float64 {
 	joint.M_lowerImpulse = 0.0
 	joint.M_minLength = B2FloatClamp(minLength, B2_linearSlop, joint.M_maxLength)
 	return joint.M_minLength
 }
 
-/// Get the maximum length
+// Get the maximum length
 func (joint B2DistanceJoint) GetMaxLength() float64 {
 	return joint.M_maxLength
 }
 
-/// Set the maximum length
-/// @returns the clamped maximum length
+// Set the maximum length
+// @returns the clamped maximum length
 func (joint *B2DistanceJoint) SetMaxLength(maxLength float64) float64 {
 	joint.M_upperImpulse = 0.0
 	joint.M_maxLength = math.Max(maxLength, joint.M_minLength)
 	return joint.M_maxLength
 }
 
-/// Get the current length
+// Get the current length
 func (joint B2DistanceJoint) GetCurrentLength() float64 {
 	pA := joint.M_bodyA.GetWorldPoint(joint.M_localAnchorA)
 	pB := joint.M_bodyB.GetWorldPoint(joint.M_localAnchorB)
@@ -146,22 +146,22 @@ func (joint B2DistanceJoint) GetCurrentLength() float64 {
 	return length
 }
 
-/// Set the linear stiffness in N/m
+// Set the linear stiffness in N/m
 func (joint *B2DistanceJoint) SetStiffness(stiffness float64) {
 	joint.M_stiffness = stiffness
 }
 
-/// Get the linear stiffness in N/m
+// Get the linear stiffness in N/m
 func (joint B2DistanceJoint) GetStiffness() float64 {
 	return joint.M_stiffness
 }
 
-/// Set linear damping in N*s/m
+// Set linear damping in N*s/m
 func (joint *B2DistanceJoint) SetDamping(damping float64) {
 	joint.M_damping = damping
 }
 
-/// Get linear damping in N*s/m
+// Get linear damping in N*s/m
 func (joint B2DistanceJoint) GetDamping() float64 {
 	return joint.M_damping
 }
@@ -181,8 +181,8 @@ func (joint B2DistanceJoint) GetDamping() float64 {
 // K = J * invM * JT
 //   = invMass1 + invI1 * cross(r1, u)^2 + invMass2 + invI2 * cross(r2, u)^2
 
-/// Initialize the bodies, anchors, and rest length using world space anchors.
-/// The minimum and maximum lengths are set to the rest length.
+// Initialize the bodies, anchors, and rest length using world space anchors.
+// The minimum and maximum lengths are set to the rest length.
 func (joint *B2DistanceJointDef) Initialize(b1 *B2Body, b2 *B2Body, anchor1 B2Vec2, anchor2 B2Vec2) {
 	joint.BodyA = b1
 	joint.BodyB = b2

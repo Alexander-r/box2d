@@ -5,26 +5,26 @@ import (
 	"math"
 )
 
-/// Weld joint definition. You need to specify local anchor points
-/// where they are attached and the relative body angle. The position
-/// of the anchor points is important for computing the reaction torque.
+// Weld joint definition. You need to specify local anchor points
+// where they are attached and the relative body angle. The position
+// of the anchor points is important for computing the reaction torque.
 type B2WeldJointDef struct {
 	B2JointDef
 
-	/// The local anchor point relative to bodyA's origin.
+	// The local anchor point relative to bodyA's origin.
 	LocalAnchorA B2Vec2
 
-	/// The local anchor point relative to bodyB's origin.
+	// The local anchor point relative to bodyB's origin.
 	LocalAnchorB B2Vec2
 
-	/// The bodyB angle minus bodyA angle in the reference state (radians).
+	// The bodyB angle minus bodyA angle in the reference state (radians).
 	ReferenceAngle float64
 
-	/// The rotational stiffness in N*m
-	/// Disable softness with a value of 0
+	// The rotational stiffness in N*m
+	// Disable softness with a value of 0
 	Stiffness float64
 
-	/// The rotational damping in N*m*s
+	// The rotational damping in N*m*s
 	Damping float64
 }
 
@@ -43,8 +43,8 @@ func MakeB2WeldJointDef() B2WeldJointDef {
 	return res
 }
 
-/// A weld joint essentially glues two bodies together. A weld joint may
-/// distort somewhat because the island constraint solver is approximate.
+// A weld joint essentially glues two bodies together. A weld joint may
+// distort somewhat because the island constraint solver is approximate.
 type B2WeldJoint struct {
 	*B2Joint
 
@@ -73,59 +73,59 @@ type B2WeldJoint struct {
 	M_mass         B2Mat33
 }
 
-/// The local anchor point relative to bodyA's origin.
+// The local anchor point relative to bodyA's origin.
 func (joint B2WeldJoint) GetLocalAnchorA() B2Vec2 {
 	return joint.M_localAnchorA
 }
 
-/// The local anchor point relative to bodyB's origin.
+// The local anchor point relative to bodyB's origin.
 func (joint B2WeldJoint) GetLocalAnchorB() B2Vec2 {
 	return joint.M_localAnchorB
 }
 
-/// Get the reference angle.
+// Get the reference angle.
 func (joint B2WeldJoint) GetReferenceAngle() float64 {
 	return joint.M_referenceAngle
 }
 
-/// Set stiffness in N*m
+// Set stiffness in N*m
 func (joint *B2WeldJoint) SetStiffness(stiffness float64) {
 	joint.M_stiffness = stiffness
 }
 
-/// Get stiffness in N*m
+// Get stiffness in N*m
 func (joint B2WeldJoint) GetStiffness() float64 {
 	return joint.M_stiffness
 }
 
-/// Set damping in N*m*s
+// Set damping in N*m*s
 func (joint *B2WeldJoint) SetDamping(damping float64) {
 	joint.M_damping = damping
 }
 
-/// Get damping in N*m*s
+// Get damping in N*m*s
 func (joint B2WeldJoint) GetDamping() float64 {
 	return joint.M_damping
 }
 
-// // Point-to-point constraint
-// // C = p2 - p1
-// // Cdot = v2 - v1
-// //      = v2 + cross(w2, r2) - v1 - cross(w1, r1)
-// // J = [-I -r1_skew I r2_skew ]
-// // Identity used:
-// // w k % (rx i + ry j) = w * (-ry i + rx j)
+// Point-to-point constraint
+// C = p2 - p1
+// Cdot = v2 - v1
+//      = v2 + cross(w2, r2) - v1 - cross(w1, r1)
+// J = [-I -r1_skew I r2_skew ]
+// Identity used:
+// w k % (rx i + ry j) = w * (-ry i + rx j)
 
-// // Angle constraint
-// // C = angle2 - angle1 - referenceAngle
-// // Cdot = w2 - w1
-// // J = [0 0 -1 0 0 1]
-// // K = invI1 + invI2
+// Angle constraint
+// C = angle2 - angle1 - referenceAngle
+// Cdot = w2 - w1
+// J = [0 0 -1 0 0 1]
+// K = invI1 + invI2
 
-/// Initialize the bodies, anchors, reference angle, stiffness, and damping.
-/// @param bodyA the first body connected by this joint
-/// @param bodyB the second body connected by this joint
-/// @param anchor the point of connection in world coordinates
+// Initialize the bodies, anchors, reference angle, stiffness, and damping.
+// @param bodyA the first body connected by this joint
+// @param bodyB the second body connected by this joint
+// @param anchor the point of connection in world coordinates
 func (def *B2WeldJointDef) Initialize(bA *B2Body, bB *B2Body, anchor B2Vec2) {
 	def.BodyA = bA
 	def.BodyB = bB

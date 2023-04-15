@@ -12,7 +12,7 @@ const B2_nullNode = -1
 
 type B2TreeNode struct {
 
-	/// Enlarged AABB
+	// Enlarged AABB
 	Aabb B2AABB
 
 	UserData interface{}
@@ -36,14 +36,14 @@ func (node B2TreeNode) IsLeaf() bool {
 	return node.Child1 == B2_nullNode
 }
 
-/// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
-/// A dynamic tree arranges data in a binary tree to accelerate
-/// queries such as volume queries and ray casts. Leafs are proxies
-/// with an AABB. In the tree we expand the proxy AABB by b2_fatAABBFactor
-/// so that the proxy AABB is bigger than the client object. This allows the client
-/// object to move by small amounts without triggering a tree update.
-///
-/// Nodes are pooled and relocatable, so we use node indices rather than pointers.
+// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
+// A dynamic tree arranges data in a binary tree to accelerate
+// queries such as volume queries and ray casts. Leafs are proxies
+// with an AABB. In the tree we expand the proxy AABB by b2_fatAABBFactor
+// so that the proxy AABB is bigger than the client object. This allows the client
+// object to move by small amounts without triggering a tree update.
+//
+// Nodes are pooled and relocatable, so we use node indices rather than pointers.
 type B2DynamicTree struct {
 
 	// Public members:
@@ -517,7 +517,7 @@ func (tree *B2DynamicTree) RemoveLeaf(leaf int) {
 		tree.FreeNode(parent)
 	}
 
-	// //Validate();
+	//Validate();
 }
 
 // Perform a left or right rotation if node A is imbalanced.
@@ -652,7 +652,6 @@ func (tree B2DynamicTree) GetHeight() int {
 	return tree.M_nodes[tree.M_root].Height
 }
 
-//
 func (tree B2DynamicTree) GetAreaRatio() float64 {
 	if tree.M_root == B2_nullNode {
 		return 0.0

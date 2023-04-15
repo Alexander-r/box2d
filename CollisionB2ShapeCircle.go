@@ -4,10 +4,10 @@ import (
 	"math"
 )
 
-/// A solid circle shape
+// A solid circle shape
 type B2CircleShape struct {
 	B2Shape
-	/// Position
+	// Position
 	M_p B2Vec2
 }
 
@@ -50,8 +50,8 @@ func (shape B2CircleShape) TestPoint(transform B2Transform, p B2Vec2) bool {
 // x = s + a * r
 // norm(x) = radius
 //
-/// @note because the circle is solid, rays that start inside do not hit because the normal is
-/// not defined.
+// @note because the circle is solid, rays that start inside do not hit because the normal is
+// not defined.
 func (shape B2CircleShape) RayCast(output *B2RayCastOutput, input B2RayCastInput, transform B2Transform, childIndex int) bool {
 	// B2_NOT_USED(childIndex);
 

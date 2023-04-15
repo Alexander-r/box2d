@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-/// This is an internal class.
+// This is an internal class.
 type B2Island struct {
 	M_listener B2ContactListenerInterface
 

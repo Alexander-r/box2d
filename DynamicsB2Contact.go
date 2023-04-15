@@ -4,14 +4,14 @@ import (
 	"math"
 )
 
-/// Friction mixing law. The idea is to allow either fixture to drive the friction to zero.
-/// For example, anything slides on ice.
+// Friction mixing law. The idea is to allow either fixture to drive the friction to zero.
+// For example, anything slides on ice.
 func B2MixFriction(friction1, friction2 float64) float64 {
 	return math.Sqrt(friction1 * friction2)
 }
 
-/// Restitution mixing law. The idea is allow for anything to bounce off an inelastic surface.
-/// For example, a superball bounces on anything.
+// Restitution mixing law. The idea is allow for anything to bounce off an inelastic surface.
+// For example, a superball bounces on anything.
 func B2MixRestitution(restitution1, restitution2 float64) float64 {
 	if restitution1 > restitution2 {
 		return restitution1
@@ -20,7 +20,7 @@ func B2MixRestitution(restitution1, restitution2 float64) float64 {
 	return restitution2
 }
 
-/// Restitution mixing law. This picks the lowest value.
+// Restitution mixing law. This picks the lowest value.
 func B2MixRestitutionThreshold(threshold1, threshold2 float64) float64 {
 	if threshold1 < threshold2 {
 		return threshold1
@@ -38,16 +38,16 @@ type B2ContactRegister struct {
 	Primary    bool
 }
 
-/// A contact edge is used to connect bodies and contacts together
-/// in a contact graph where each body is a node and each contact
-/// is an edge. A contact edge belongs to a doubly linked list
-/// maintained in each attached body. Each contact has two contact
-/// nodes, one for each attached body.
+// A contact edge is used to connect bodies and contacts together
+// in a contact graph where each body is a node and each contact
+// is an edge. A contact edge belongs to a doubly linked list
+// maintained in each attached body. Each contact has two contact
+// nodes, one for each attached body.
 type B2ContactEdge struct {
-	Other   *B2Body            ///< provides quick access to the other body attached.
-	Contact B2ContactInterface ///< the contact
-	Prev    *B2ContactEdge     ///< the previous contact edge in the body's contact list
-	Next    *B2ContactEdge     ///< the next contact edge in the body's contact list
+	Other   *B2Body            // provides quick access to the other body attached.
+	Contact B2ContactInterface // the contact
+	Prev    *B2ContactEdge     // the previous contact edge in the body's contact list
+	Next    *B2ContactEdge     // the next contact edge in the body's contact list
 }
 
 func NewB2ContactEdge() *B2ContactEdge {
@@ -81,9 +81,9 @@ var B2Contact_Flag = struct {
 	E_toiFlag:       0x0020,
 }
 
-// /// The class manages contact between two shapes. A contact exists for each overlapping
-// /// AABB in the broad-phase (except if filtered). Therefore a contact object may exist
-// /// that has no contact points.
+// The class manages contact between two shapes. A contact exists for each overlapping
+// AABB in the broad-phase (except if filtered). Therefore a contact object may exist
+// that has no contact points.
 var s_registers [][]B2ContactRegister
 var s_initialized = false
 
@@ -273,60 +273,60 @@ func (contact *B2Contact) SetTOI(toi float64) {
 	contact.M_toi = toi
 }
 
-/// Get the friction.
+// Get the friction.
 func (contact B2Contact) GetFriction() float64 {
 	return contact.M_friction
 }
 
-/// Override the default friction mixture. You can call this in b2ContactListener::PreSolve.
-/// This value persists until set or reset.
+// Override the default friction mixture. You can call this in b2ContactListener::PreSolve.
+// This value persists until set or reset.
 func (contact *B2Contact) SetFriction(friction float64) {
 	contact.M_friction = friction
 }
 
-/// Reset the friction mixture to the default value.
+// Reset the friction mixture to the default value.
 func (contact *B2Contact) ResetFriction() {
 	contact.M_friction = B2MixFriction(contact.M_fixtureA.M_friction, contact.M_fixtureB.M_friction)
 }
 
-/// Get the restitution.
+// Get the restitution.
 func (contact B2Contact) GetRestitution() float64 {
 	return contact.M_restitution
 }
 
-/// Override the default restitution mixture. You can call this in b2ContactListener::PreSolve.
-/// The value persists until you set or reset.
+// Override the default restitution mixture. You can call this in b2ContactListener::PreSolve.
+// The value persists until you set or reset.
 func (contact *B2Contact) SetRestitution(restitution float64) {
 	contact.M_restitution = restitution
 }
 
-/// Reset the restitution to the default value.
+// Reset the restitution to the default value.
 func (contact *B2Contact) ResetRestitution() {
 	contact.M_restitution = B2MixRestitution(contact.M_fixtureA.M_restitution, contact.M_fixtureB.M_restitution)
 }
 
-/// Override the default restitution velocity threshold mixture. You can call this in b2ContactListener::PreSolve.
-/// The value persists until you set or reset.
+// Override the default restitution velocity threshold mixture. You can call this in b2ContactListener::PreSolve.
+// The value persists until you set or reset.
 func (contact *B2Contact) SetRestitutionThreshold(threshold float64) {
 	contact.M_restitutionThreshold = threshold
 }
 
-/// Get the restitution threshold.
+// Get the restitution threshold.
 func (contact B2Contact) GetRestitutionThreshold() float64 {
 	return contact.M_restitutionThreshold
 }
 
-/// Reset the restitution threshold to the default value.
+// Reset the restitution threshold to the default value.
 func (contact *B2Contact) ResetRestitutionThreshold() {
 	contact.M_restitutionThreshold = B2MixRestitutionThreshold(contact.M_fixtureA.M_restitutionThreshold, contact.M_fixtureB.M_restitutionThreshold)
 }
 
-/// Get the desired tangent speed. In meters per second.
+// Get the desired tangent speed. In meters per second.
 func (contact B2Contact) GetTangentSpeed() float64 {
 	return contact.M_tangentSpeed
 }
 
-/// Set the desired tangent speed for a conveyor belt behavior. In meters per second.
+// Set the desired tangent speed for a conveyor belt behavior. In meters per second.
 func (contact *B2Contact) SetTangentSpeed(speed float64) {
 	contact.M_tangentSpeed = speed
 }

@@ -5,9 +5,9 @@ import (
 	"math"
 )
 
-// /// The world class manages all physics entities, dynamic simulation,
-// /// and asynchronous queries. The world also contains efficient memory
-// /// management facilities.
+// The world class manages all physics entities, dynamic simulation,
+// and asynchronous queries. The world also contains efficient memory
+// management facilities.
 type B2World struct {
 	M_contactManager B2ContactManager
 
@@ -81,7 +81,7 @@ func (world *B2World) SetAutoClearForces(flag bool) {
 	world.M_clearForces = flag
 }
 
-/// Get the flag that controls automatic clearing of forces after each time step.
+// Get the flag that controls automatic clearing of forces after each time step.
 func (world B2World) GetAutoClearForces() bool {
 	return world.M_clearForces
 }

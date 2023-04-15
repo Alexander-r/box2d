@@ -1,9 +1,9 @@
 package box2d
 
-/// A solid convex polygon. It is assumed that the interior of the polygon is to
-/// the left of each edge.
-/// Polygons have a maximum number of vertices equal to b2_maxPolygonVertices.
-/// In most cases you should not need many vertices for a convex polygon.
+// A solid convex polygon. It is assumed that the interior of the polygon is to
+// the left of each edge.
+// Polygons have a maximum number of vertices equal to b2_maxPolygonVertices.
+// In most cases you should not need many vertices for a convex polygon.
 
 type B2PolygonShape struct {
 	B2Shape
@@ -277,8 +277,8 @@ func (poly B2PolygonShape) TestPoint(xf B2Transform, p B2Vec2) bool {
 	return true
 }
 
-/// @note because the polygon is solid, rays that start inside do not hit because the normal is
-/// not defined.
+// @note because the polygon is solid, rays that start inside do not hit because the normal is
+// not defined.
 func (poly B2PolygonShape) RayCast(output *B2RayCastOutput, input B2RayCastInput, xf B2Transform, childIndex int) bool {
 
 	// Put the ray into the polygon's frame of reference.

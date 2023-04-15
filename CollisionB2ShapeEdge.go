@@ -1,17 +1,17 @@
 package box2d
 
-/// A line segment (edge) shape. These can be connected in chains or loops
-/// to other edge shapes. Edges created independently are two-sided and do
-/// no provide smooth movement across junctions.
+// A line segment (edge) shape. These can be connected in chains or loops
+// to other edge shapes. Edges created independently are two-sided and do
+// no provide smooth movement across junctions.
 type B2EdgeShape struct {
 	B2Shape
-	/// These are the edge vertices
+	// These are the edge vertices
 	M_vertex1, M_vertex2 B2Vec2
 
-	/// Optional adjacent vertices. These are used for smooth collision.
+	// Optional adjacent vertices. These are used for smooth collision.
 	M_vertex0, M_vertex3 B2Vec2
 
-	/// Uses m_vertex0 and m_vertex3 to create smooth collision.
+	// Uses m_vertex0 and m_vertex3 to create smooth collision.
 	M_oneSided bool
 }
 
@@ -40,10 +40,10 @@ func NewB2EdgeShape() *B2EdgeShape {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-/// Set this as a part of a sequence. Vertex v0 precedes the edge and vertex v3
-/// follows. These extra vertices are used to provide smooth movement
-/// across junctions. This also makes the collision one-sided. The edge
-/// normal points to the right looking from v1 to v2.
+// Set this as a part of a sequence. Vertex v0 precedes the edge and vertex v3
+// follows. These extra vertices are used to provide smooth movement
+// across junctions. This also makes the collision one-sided. The edge
+// normal points to the right looking from v1 to v2.
 func (edge *B2EdgeShape) SetOneSided(v0 B2Vec2, v1 B2Vec2, v2 B2Vec2, v3 B2Vec2) {
 	edge.M_vertex0 = v0
 	edge.M_vertex1 = v1
@@ -52,7 +52,7 @@ func (edge *B2EdgeShape) SetOneSided(v0 B2Vec2, v1 B2Vec2, v2 B2Vec2, v3 B2Vec2)
 	edge.M_oneSided = true
 }
 
-/// Set this as an isolated edge. Collision is two-sided.
+// Set this as an isolated edge. Collision is two-sided.
 func (edge *B2EdgeShape) SetTwoSided(v1 B2Vec2, v2 B2Vec2) {
 	edge.M_vertex1 = v1
 	edge.M_vertex2 = v2

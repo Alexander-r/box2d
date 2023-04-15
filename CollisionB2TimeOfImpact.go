@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-/// Input parameters for b2TimeOfImpact
+// Input parameters for b2TimeOfImpact
 type B2TOIInput struct {
 	ProxyA B2DistanceProxy
 	ProxyB B2DistanceProxy
@@ -64,7 +64,6 @@ var B2SeparationFunction_Type = struct {
 	E_faceB:  2,
 }
 
-//
 type B2SeparationFunction struct {
 	M_proxyA           *B2DistanceProxy
 	M_proxyB           *B2DistanceProxy
@@ -152,7 +151,6 @@ func (sepfunc *B2SeparationFunction) Initialize(cache *B2SimplexCache, proxyA *B
 	}
 }
 
-//
 func (sepfunc *B2SeparationFunction) FindMinSeparation(indexA *int, indexB *int, t float64) float64 {
 
 	xfA := MakeB2Transform()
@@ -222,7 +220,6 @@ func (sepfunc *B2SeparationFunction) FindMinSeparation(indexA *int, indexB *int,
 	}
 }
 
-//
 func (sepfunc *B2SeparationFunction) Evaluate(indexA int, indexB int, t float64) float64 {
 
 	xfA := MakeB2Transform()
@@ -274,11 +271,11 @@ func (sepfunc *B2SeparationFunction) Evaluate(indexA int, indexB int, t float64)
 	}
 }
 
-/// Compute the upper bound on time before two shapes penetrate. Time is represented as
-/// a fraction between [0,tMax]. This uses a swept separating axis and may miss some intermediate,
-/// non-tunneling collision. If you change the time interval, you should call this function
-/// again.
-/// Note: use b2Distance to compute the contact point and normal at the time of impact.
+// Compute the upper bound on time before two shapes penetrate. Time is represented as
+// a fraction between [0,tMax]. This uses a swept separating axis and may miss some intermediate,
+// non-tunneling collision. If you change the time interval, you should call this function
+// again.
+// Note: use b2Distance to compute the contact point and normal at the time of impact.
 // CCD via the local separating axis method. This seeks progression
 // by computing the largest time at which separation is maintained.
 func B2TimeOfImpact(output *B2TOIOutput, input *B2TOIInput) {

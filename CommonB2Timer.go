@@ -2,8 +2,8 @@ package box2d
 
 import "time"
 
-/// Timer for profiling. This has platform specific code and may
-/// not work on every platform.
+// Timer for profiling. This has platform specific code and may
+// not work on every platform.
 type B2Timer struct {
 	m_start time.Time
 }

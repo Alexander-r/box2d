@@ -10,8 +10,8 @@ import "math"
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-/// A distance proxy is used by the GJK algorithm.
-/// It encapsulates any shape.
+// A distance proxy is used by the GJK algorithm.
+// It encapsulates any shape.
 type B2DistanceProxy struct {
 	M_buffer   [2]B2Vec2
 	M_vertices []B2Vec2 // is a memory blob using pointer arithmetic in original implementation
@@ -32,21 +32,21 @@ func NewB2DistanceProxy() *B2DistanceProxy {
 	return &res
 }
 
-/// Used to warm start b2Distance.
-/// Set count to zero on first call.
+// Used to warm start b2Distance.
+// Set count to zero on first call.
 type B2SimplexCache struct {
-	Metric float64 ///< length or area
+	Metric float64 // length or area
 	Count  int
-	IndexA [3]int ///< vertices on shape A
-	IndexB [3]int ///< vertices on shape B
+	IndexA [3]int // vertices on shape A
+	IndexB [3]int // vertices on shape B
 }
 
 func MakeB2SimplexCache() B2SimplexCache {
 	return B2SimplexCache{
 		Metric: 0,
 		Count:  0,
-		IndexA: [3]int{}, ///< vertices on shape A
-		IndexB: [3]int{}, ///< vertices on shape B
+		IndexA: [3]int{}, // vertices on shape A
+		IndexB: [3]int{}, // vertices on shape B
 	}
 }
 
@@ -55,9 +55,9 @@ func NewB2SimplexCache() *B2SimplexCache {
 	return &res
 }
 
-/// Input for b2Distance.
-/// You have to option to use the shape radii
-/// in the computation. Even
+// Input for b2Distance.
+// You have to option to use the shape radii
+// in the computation. Even
 type B2DistanceInput struct {
 	ProxyA     B2DistanceProxy
 	ProxyB     B2DistanceProxy
@@ -81,12 +81,12 @@ func NewB2DistanceInput() *B2DistanceInput {
 	return &res
 }
 
-/// Output for b2Distance.
+// Output for b2Distance.
 type B2DistanceOutput struct {
-	PointA     B2Vec2 ///< closest point on shapeA
-	PointB     B2Vec2 ///< closest point on shapeB
+	PointA     B2Vec2 // closest point on shapeA
+	PointB     B2Vec2 // closest point on shapeB
 	Distance   float64
-	Iterations int ///< number of GJK iterations used
+	Iterations int // number of GJK iterations used
 }
 
 func MakeB2DistanceOutput() B2DistanceOutput {
@@ -103,7 +103,7 @@ func NewB2DistanceOutput() *B2DistanceOutput {
 	return &res
 }
 
-/// Input parameters for b2ShapeCast
+// Input parameters for b2ShapeCast
 type B2ShapeCastInput struct {
 	ProxyA       B2DistanceProxy
 	ProxyB       B2DistanceProxy
@@ -127,7 +127,7 @@ func NewB2ShapeCastInput() *B2ShapeCastInput {
 	return &res
 }
 
-/// Output results for b2ShapeCast
+// Output results for b2ShapeCast
 type B2ShapeCastOutput struct {
 	Point      B2Vec2
 	Normal     B2Vec2
@@ -200,8 +200,8 @@ func (p B2DistanceProxy) GetSupportVertex(d B2Vec2) B2Vec2 {
 // GJK using Voronoi regions (Christer Ericson) and Barycentric coordinates.
 var b2_gjkCalls, b2_gjkIters, b2_gjkMaxIters int
 
-/// Initialize the proxy using the given shape. The shape
-/// must remain in scope while the proxy is in use.
+// Initialize the proxy using the given shape. The shape
+// must remain in scope while the proxy is in use.
 func (p *B2DistanceProxy) Set(shape B2ShapeInterface, index int) {
 	switch shape.GetType() {
 	case B2Shape_Type.E_circle:
@@ -505,11 +505,11 @@ func (simplex *B2Simplex) Solve2() {
 	simplex.M_count = 2
 }
 
-// // Possible regions:
-// // - points[2]
-// // - edge points[0]-points[2]
-// // - edge points[1]-points[2]
-// // - inside the triangle
+// Possible regions:
+// - points[2]
+// - edge points[0]-points[2]
+// - edge points[1]-points[2]
+// - inside the triangle
 func (simplex *B2Simplex) Solve3() {
 
 	w1 := simplex.M_vs[0].W
@@ -722,10 +722,10 @@ func B2Distance(output *B2DistanceOutput, cache *B2SimplexCache, input *B2Distan
 	output.Distance = B2Vec2Distance(output.PointA, output.PointB)
 	output.Iterations = iter
 
-	// // Cache the simplex.
+	// Cache the simplex.
 	simplex.WriteCache(cache)
 
-	// // Apply radii if requested.
+	// Apply radii if requested.
 	if input.UseRadii {
 		rA := proxyA.M_radius
 		rB := proxyB.M_radius
@@ -761,7 +761,7 @@ func B2Distance(output *B2DistanceOutput, cache *B2SimplexCache, input *B2Distan
 // "Smooth Mesh Contacts with GJK" in Game Physics Pearls. 2010
 //
 // Perform a linear shape cast of shape B moving and shape A fixed. Determines the hit point, normal, and translation fraction.
-/// @returns true if hit, false if there is no hit or an initial overlap
+// @returns true if hit, false if there is no hit or an initial overlap
 func B2ShapeCast(output *B2ShapeCastOutput, input *B2ShapeCastInput) bool {
 	output.Iterations = 0
 	output.Lambda = 1.0

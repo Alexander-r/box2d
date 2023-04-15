@@ -5,43 +5,43 @@ import (
 	"math"
 )
 
-/// Prismatic joint definition. This requires defining a line of
-/// motion using an axis and an anchor point. The definition uses local
-/// anchor points and a local axis so that the initial configuration
-/// can violate the constraint slightly. The joint translation is zero
-/// when the local anchor points coincide in world space. Using local
-/// anchors and a local axis helps when saving and loading a game.
+// Prismatic joint definition. This requires defining a line of
+// motion using an axis and an anchor point. The definition uses local
+// anchor points and a local axis so that the initial configuration
+// can violate the constraint slightly. The joint translation is zero
+// when the local anchor points coincide in world space. Using local
+// anchors and a local axis helps when saving and loading a game.
 type B2PrismaticJointDef struct {
 	B2JointDef
 
-	/// The local anchor point relative to bodyA's origin.
+	// The local anchor point relative to bodyA's origin.
 	LocalAnchorA B2Vec2
 
-	/// The local anchor point relative to bodyB's origin.
+	// The local anchor point relative to bodyB's origin.
 	LocalAnchorB B2Vec2
 
-	/// The local translation unit axis in bodyA.
+	// The local translation unit axis in bodyA.
 	LocalAxisA B2Vec2
 
-	/// The constrained angle between the bodies: bodyB_angle - bodyA_angle.
+	// The constrained angle between the bodies: bodyB_angle - bodyA_angle.
 	ReferenceAngle float64
 
-	/// Enable/disable the joint limit.
+	// Enable/disable the joint limit.
 	EnableLimit bool
 
-	/// The lower translation limit, usually in meters.
+	// The lower translation limit, usually in meters.
 	LowerTranslation float64
 
-	/// The upper translation limit, usually in meters.
+	// The upper translation limit, usually in meters.
 	UpperTranslation float64
 
-	/// Enable/disable the joint motor.
+	// Enable/disable the joint motor.
 	EnableMotor bool
 
-	/// The maximum motor torque, usually in N-m.
+	// The maximum motor torque, usually in N-m.
 	MaxMotorForce float64
 
-	/// The desired motor speed in radians per second.
+	// The desired motor speed in radians per second.
 	MotorSpeed float64
 }
 
@@ -65,10 +65,10 @@ func MakeB2PrismaticJointDef() B2PrismaticJointDef {
 	return res
 }
 
-/// A prismatic joint. This joint provides one degree of freedom: translation
-/// along an axis fixed in bodyA. Relative rotation is prevented. You can
-/// use a joint limit to restrict the range of motion and a joint motor to
-/// drive the motion or to model joint friction.
+// A prismatic joint. This joint provides one degree of freedom: translation
+// along an axis fixed in bodyA. Relative rotation is prevented. You can
+// use a joint limit to restrict the range of motion and a joint motor to
+// drive the motion or to model joint friction.
 type B2PrismaticJoint struct {
 	*B2Joint
 
@@ -105,22 +105,22 @@ type B2PrismaticJoint struct {
 	M_axialMass    float64
 }
 
-/// The local anchor point relative to bodyA's origin.
+// The local anchor point relative to bodyA's origin.
 func (joint B2PrismaticJoint) GetLocalAnchorA() B2Vec2 {
 	return joint.M_localAnchorA
 }
 
-/// The local anchor point relative to bodyB's origin.
+// The local anchor point relative to bodyB's origin.
 func (joint B2PrismaticJoint) GetLocalAnchorB() B2Vec2 {
 	return joint.M_localAnchorB
 }
 
-/// The local joint axis relative to bodyA.
+// The local joint axis relative to bodyA.
 func (joint B2PrismaticJoint) GetLocalAxisA() B2Vec2 {
 	return joint.M_localXAxisA
 }
 
-/// Get the reference angle.
+// Get the reference angle.
 func (joint B2PrismaticJoint) GetReferenceAngle() float64 {
 	return joint.M_referenceAngle
 }

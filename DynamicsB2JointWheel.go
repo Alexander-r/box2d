@@ -5,46 +5,46 @@ import (
 	"math"
 )
 
-/// Wheel joint definition. This requires defining a line of
-/// motion using an axis and an anchor point. The definition uses local
-/// anchor points and a local axis so that the initial configuration
-/// can violate the constraint slightly. The joint translation is zero
-/// when the local anchor points coincide in world space. Using local
-/// anchors and a local axis helps when saving and loading a game.
+// Wheel joint definition. This requires defining a line of
+// motion using an axis and an anchor point. The definition uses local
+// anchor points and a local axis so that the initial configuration
+// can violate the constraint slightly. The joint translation is zero
+// when the local anchor points coincide in world space. Using local
+// anchors and a local axis helps when saving and loading a game.
 type B2WheelJointDef struct {
 	B2JointDef
 
-	/// The local anchor point relative to bodyA's origin.
+	// The local anchor point relative to bodyA's origin.
 	LocalAnchorA B2Vec2
 
-	/// The local anchor point relative to bodyB's origin.
+	// The local anchor point relative to bodyB's origin.
 	LocalAnchorB B2Vec2
 
-	/// The local translation axis in bodyA.
+	// The local translation axis in bodyA.
 	LocalAxisA B2Vec2
 
-	/// Enable/disable the joint limit.
+	// Enable/disable the joint limit.
 	EnableLimit bool
 
-	/// The lower translation limit, usually in meters.
+	// The lower translation limit, usually in meters.
 	LowerTranslation float64
 
-	/// The upper translation limit, usually in meters.
+	// The upper translation limit, usually in meters.
 	UpperTranslation float64
 
-	/// Enable/disable the joint motor.
+	// Enable/disable the joint motor.
 	EnableMotor bool
 
-	/// The maximum motor torque, usually in N-m.
+	// The maximum motor torque, usually in N-m.
 	MaxMotorTorque float64
 
-	/// The desired motor speed in radians per second.
+	// The desired motor speed in radians per second.
 	MotorSpeed float64
 
-	/// Suspension stiffness. Typically in units N/m.
+	// Suspension stiffness. Typically in units N/m.
 	Stiffness float64
 
-	/// Suspension damping. Typically in units of N*s/m.
+	// Suspension damping. Typically in units of N*s/m.
 	Damping float64
 }
 
@@ -69,10 +69,10 @@ func MakeB2WheelJointDef() B2WheelJointDef {
 	return res
 }
 
-/// A wheel joint. This joint provides two degrees of freedom: translation
-/// along an axis fixed in bodyA and rotation in the plane. In other words, it is a point to
-/// line constraint with a rotational motor and a linear spring/damper. The spring/damper is
-/// initialized upon creation. This joint is designed for vehicle suspensions.
+// A wheel joint. This joint provides two degrees of freedom: translation
+// along an axis fixed in bodyA and rotation in the plane. In other words, it is a point to
+// line constraint with a rotational motor and a linear spring/damper. The spring/damper is
+// initialized upon creation. This joint is designed for vehicle suspensions.
 type B2WheelJoint struct {
 	*B2Joint
 
@@ -126,17 +126,17 @@ type B2WheelJoint struct {
 	M_gamma float64
 }
 
-/// The local anchor point relative to bodyA's origin.
+// The local anchor point relative to bodyA's origin.
 func (joint B2WheelJoint) GetLocalAnchorA() B2Vec2 {
 	return joint.M_localAnchorA
 }
 
-/// The local anchor point relative to bodyB's origin.
+// The local anchor point relative to bodyB's origin.
 func (joint B2WheelJoint) GetLocalAnchorB() B2Vec2 {
 	return joint.M_localAnchorB
 }
 
-/// The local joint axis relative to bodyA.
+// The local joint axis relative to bodyA.
 func (joint B2WheelJoint) GetLocalAxisA() B2Vec2 {
 	return joint.M_localXAxisA
 }
@@ -607,12 +607,12 @@ func (joint B2WheelJoint) GetJointAngularSpeed() float64 {
 	return wB - wA
 }
 
-/// Is the joint limit enabled?
+// Is the joint limit enabled?
 func (joint B2WheelJoint) IsLimitEnabled() bool {
 	return joint.M_enableLimit
 }
 
-/// Enable/disable the joint translation limit.
+// Enable/disable the joint translation limit.
 func (joint B2WheelJoint) EnableLimit(flag bool) {
 	if flag != joint.M_enableLimit {
 		joint.M_bodyA.SetAwake(true)
@@ -623,17 +623,17 @@ func (joint B2WheelJoint) EnableLimit(flag bool) {
 	}
 }
 
-/// Get the lower joint translation limit, usually in meters.
+// Get the lower joint translation limit, usually in meters.
 func (joint B2WheelJoint) GetLowerLimit() float64 {
 	return joint.M_lowerTranslation
 }
 
-/// Get the upper joint translation limit, usually in meters.
+// Get the upper joint translation limit, usually in meters.
 func (joint B2WheelJoint) GetUpperLimit() float64 {
 	return joint.M_upperTranslation
 }
 
-/// Set the joint translation limits, usually in meters.
+// Set the joint translation limits, usually in meters.
 func (joint B2WheelJoint) SetLimits(lower float64, upper float64) {
 	B2Assert(lower <= upper)
 	if lower != joint.M_lowerTranslation || upper != joint.M_upperTranslation {
@@ -678,22 +678,22 @@ func (joint B2WheelJoint) GetMotorTorque(inv_dt float64) float64 {
 	return inv_dt * joint.M_motorImpulse
 }
 
-/// Access spring stiffness
+// Access spring stiffness
 func (joint *B2WheelJoint) SetStiffness(stiffness float64) {
 	joint.M_stiffness = stiffness
 }
 
-/// Access spring stiffness
+// Access spring stiffness
 func (joint B2WheelJoint) GetStiffness() float64 {
 	return joint.M_stiffness
 }
 
-/// Access damping
+// Access damping
 func (joint *B2WheelJoint) SetDamping(damping float64) {
 	joint.M_damping = damping
 }
 
-/// Access damping
+// Access damping
 func (joint B2WheelJoint) GetDamping() float64 {
 	return joint.M_damping
 }

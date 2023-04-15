@@ -65,7 +65,7 @@ type B2ContactSolver struct {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// // Solver debugging is normally disabled because the block solver sometimes has to deal with a poorly conditioned effective mass matrix.
+// Solver debugging is normally disabled because the block solver sometimes has to deal with a poorly conditioned effective mass matrix.
 const B2_DEBUG_SOLVER = 0
 
 var g_blockSolve = true

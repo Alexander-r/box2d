@@ -32,34 +32,34 @@ type B2Jacobian struct {
 	AngularB float64
 }
 
-/// A joint edge is used to connect bodies and joints together
-/// in a joint graph where each body is a node and each joint
-/// is an edge. A joint edge belongs to a doubly linked list
-/// maintained in each attached body. Each joint has two joint
-/// nodes, one for each attached body.
+// A joint edge is used to connect bodies and joints together
+// in a joint graph where each body is a node and each joint
+// is an edge. A joint edge belongs to a doubly linked list
+// maintained in each attached body. Each joint has two joint
+// nodes, one for each attached body.
 type B2JointEdge struct {
-	Other *B2Body          ///< provides quick access to the other body attached.
-	Joint B2JointInterface ///< the joint; backed by pointer
-	Prev  *B2JointEdge     ///< the previous joint edge in the body's joint list
-	Next  *B2JointEdge     ///< the next joint edge in the body's joint list
+	Other *B2Body          // provides quick access to the other body attached.
+	Joint B2JointInterface // the joint; backed by pointer
+	Prev  *B2JointEdge     // the previous joint edge in the body's joint list
+	Next  *B2JointEdge     // the next joint edge in the body's joint list
 }
 
-/// Joint definitions are used to construct joints.
+// Joint definitions are used to construct joints.
 type B2JointDef struct {
 
-	/// The joint type is set automatically for concrete joint types.
+	// The joint type is set automatically for concrete joint types.
 	Type uint8
 
-	/// Use this to attach application specific data to your joints.
+	// Use this to attach application specific data to your joints.
 	UserData interface{}
 
-	/// The first attached body.
+	// The first attached body.
 	BodyA *B2Body
 
-	/// The second attached body.
+	// The second attached body.
 	BodyB *B2Body
 
-	/// Set this flag to true if the attached bodies should collide.
+	// Set this flag to true if the attached bodies should collide.
 	CollideConnected bool
 }
 
@@ -128,7 +128,7 @@ func MakeB2JointDef() B2JointDef {
 	return res
 }
 
-/// Utility to compute linear stiffness values from frequency and damping ratio
+// Utility to compute linear stiffness values from frequency and damping ratio
 func B2LinearStiffness(stiffness *float64, damping *float64, frequencyHertz float64, dampingRatio float64, bodyA *B2Body, bodyB *B2Body) {
 	massA := bodyA.GetMass()
 	massB := bodyB.GetMass()
@@ -146,7 +146,7 @@ func B2LinearStiffness(stiffness *float64, damping *float64, frequencyHertz floa
 	*damping = 2.0 * mass * dampingRatio * omega
 }
 
-/// Utility to compute rotational stiffness values frequency and damping ratio
+// Utility to compute rotational stiffness values frequency and damping ratio
 func B2AngularStiffness(stiffness *float64, damping *float64, frequencyHertz float64, dampingRatio float64, bodyA *B2Body, bodyB *B2Body) {
 	IA := bodyA.GetInertia()
 	IB := bodyB.GetInertia()
@@ -164,8 +164,8 @@ func B2AngularStiffness(stiffness *float64, damping *float64, frequencyHertz flo
 	*damping = 2.0 * I * dampingRatio * omega
 }
 
-/// The base joint class. Joints are used to constraint two bodies together in
-/// various fashions. Some joints also feature limits and motors.
+// The base joint class. Joints are used to constraint two bodies together in
+// various fashions. Some joints also feature limits and motors.
 type B2Joint struct {
 	M_type             uint8
 	M_prev             B2JointInterface // has to be backed by pointer
@@ -180,17 +180,17 @@ type B2Joint struct {
 	M_userData         interface{}
 }
 
-/// Dump this joint to the log file.
+// Dump this joint to the log file.
 func (j B2Joint) Dump() {}
 
-/// Shift the origin for any points stored in world coordinates.
+// Shift the origin for any points stored in world coordinates.
 func (j B2Joint) ShiftOrigin(newOrigin B2Vec2) {}
 
 func (j B2Joint) GetType() uint8 {
 	return j.M_type
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) SetType(t uint8) {
 	j.M_type = t
 }
@@ -199,7 +199,7 @@ func (j B2Joint) GetBodyA() *B2Body {
 	return j.M_bodyA
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) SetBodyA(body *B2Body) {
 	j.M_bodyA = body
 }
@@ -208,7 +208,7 @@ func (j B2Joint) GetBodyB() *B2Body {
 	return j.M_bodyB
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) SetBodyB(body *B2Body) {
 	j.M_bodyB = body
 }
@@ -217,7 +217,7 @@ func (j B2Joint) GetNext() B2JointInterface { // returns pointer
 	return j.M_next
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) SetNext(next B2JointInterface) { // has to be backed by pointer
 	j.M_next = next
 }
@@ -226,7 +226,7 @@ func (j B2Joint) GetPrev() B2JointInterface { // returns pointer
 	return j.M_prev
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) SetPrev(prev B2JointInterface) { // prev has to be backed by pointer
 	j.M_prev = prev
 }
@@ -243,27 +243,27 @@ func (j B2Joint) IsCollideConnected() bool {
 	return j.M_collideConnected
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) SetCollideConnected(flag bool) {
 	j.M_collideConnected = flag
 }
 
-//@goadd
+// @goadd
 func (j B2Joint) GetEdgeA() *B2JointEdge {
 	return j.M_edgeA
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) SetEdgeA(edge *B2JointEdge) {
 	j.M_edgeA = edge
 }
 
-//@goadd
+// @goadd
 func (j B2Joint) GetEdgeB() *B2JointEdge {
 	return j.M_edgeB
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) SetEdgeB(edge *B2JointEdge) {
 	j.M_edgeB = edge
 }
@@ -396,17 +396,17 @@ func MakeB2Joint(def B2JointDefInterface) *B2Joint { // def has to be backed by 
 	return &res
 }
 
-/// Short-cut function to determine if either body is enabled.
+// Short-cut function to determine if either body is enabled.
 func (j B2Joint) IsEnabled() bool {
 	return j.M_bodyA.IsEnabled() && j.M_bodyB.IsEnabled()
 }
 
-//@goadd
+// @goadd
 func (j *B2Joint) Destroy() {
 
 }
 
-//@goadd
+// @goadd
 func (j B2Joint) GetIndex() int {
 	return j.M_index
 }
@@ -432,10 +432,10 @@ func (j *B2Joint) SetIslandFlag(flag bool) {
 }
 
 type B2JointInterface interface {
-	/// Dump this joint to the log file.
+	// Dump this joint to the log file.
 	Dump()
 
-	/// Shift the origin for any points stored in world coordinates.
+	// Shift the origin for any points stored in world coordinates.
 	ShiftOrigin(newOrigin B2Vec2)
 
 	GetType() uint8

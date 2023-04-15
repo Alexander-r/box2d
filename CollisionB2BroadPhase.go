@@ -25,8 +25,8 @@ type B2BroadPhase struct {
 	M_queryProxyId int
 }
 
-//Was used for sorting the pair buffer to expose duplicates:
-//sort.Sort(PairByLessThan(bp.M_pairBuffer[:bp.M_pairCount]))
+// Was used for sorting the pair buffer to expose duplicates:
+// sort.Sort(PairByLessThan(bp.M_pairBuffer[:bp.M_pairCount]))
 type PairByLessThan []B2Pair
 
 func (a PairByLessThan) Len() int      { return len(a) }

@@ -4,20 +4,20 @@ import (
 	"fmt"
 )
 
-/// Friction joint definition.
+// Friction joint definition.
 type B2FrictionJointDef struct {
 	B2JointDef
 
-	/// The local anchor point relative to bodyA's origin.
+	// The local anchor point relative to bodyA's origin.
 	LocalAnchorA B2Vec2
 
-	/// The local anchor point relative to bodyB's origin.
+	// The local anchor point relative to bodyB's origin.
 	LocalAnchorB B2Vec2
 
-	/// The maximum friction force in N.
+	// The maximum friction force in N.
 	MaxForce float64
 
-	/// The maximum friction torque in N-m.
+	// The maximum friction torque in N-m.
 	MaxTorque float64
 }
 
@@ -35,8 +35,8 @@ func MakeB2FrictionJointDef() B2FrictionJointDef {
 	return res
 }
 
-/// Friction joint. This is used for top-down friction.
-/// It provides 2D translational friction and angular friction.
+// Friction joint. This is used for top-down friction.
+// It provides 2D translational friction and angular friction.
 type B2FrictionJoint struct {
 	*B2Joint
 
@@ -64,12 +64,12 @@ type B2FrictionJoint struct {
 	M_angularMass  float64
 }
 
-/// The local anchor point relative to bodyA's origin.
+// The local anchor point relative to bodyA's origin.
 func (joint B2FrictionJoint) GetLocalAnchorA() B2Vec2 {
 	return joint.M_localAnchorA
 }
 
-/// The local anchor point relative to bodyB's origin.
+// The local anchor point relative to bodyB's origin.
 func (joint B2FrictionJoint) GetLocalAnchorB() B2Vec2 {
 	return joint.M_localAnchorB
 }

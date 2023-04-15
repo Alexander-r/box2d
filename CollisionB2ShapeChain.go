@@ -1,19 +1,19 @@
 package box2d
 
-/// A chain shape is a free form sequence of line segments.
-/// The chain has one-sided collision, with the surface normal pointing to the right of the edge.
-/// This provides a counter-clockwise winding like the polygon shape.
-/// Connectivity information is used to create smooth collisions.
-/// @warning the chain will not collide properly if there are self-intersections.
+// A chain shape is a free form sequence of line segments.
+// The chain has one-sided collision, with the surface normal pointing to the right of the edge.
+// This provides a counter-clockwise winding like the polygon shape.
+// Connectivity information is used to create smooth collisions.
+// @warning the chain will not collide properly if there are self-intersections.
 
-/// A circle shape.
+// A circle shape.
 type B2ChainShape struct {
 	B2Shape
 
-	/// The vertices. Owned by this class.
+	// The vertices. Owned by this class.
 	M_vertices []B2Vec2
 
-	/// The vertex count.
+	// The vertex count.
 	M_count int
 
 	M_prevVertex B2Vec2
@@ -48,9 +48,9 @@ func (chain *B2ChainShape) Clear() {
 	chain.M_count = 0
 }
 
-/// Create a loop. This automatically adjusts connectivity.
-/// @param vertices an array of vertices, these are copied
-/// @param count the vertex count
+// Create a loop. This automatically adjusts connectivity.
+// @param vertices an array of vertices, these are copied
+// @param count the vertex count
 func (chain *B2ChainShape) CreateLoop(vertices []B2Vec2, count int) {
 	B2Assert(chain.M_vertices == nil && chain.M_count == 0)
 	B2Assert(count >= 3)
@@ -76,11 +76,11 @@ func (chain *B2ChainShape) CreateLoop(vertices []B2Vec2, count int) {
 	chain.M_nextVertex = chain.M_vertices[1]
 }
 
-/// Create a chain with ghost vertices to connect multiple chains together.
-/// @param vertices an array of vertices, these are copied
-/// @param count the vertex count
-/// @param prevVertex previous vertex from chain that connects to the start
-/// @param nextVertex next vertex from chain that connects to the end
+// Create a chain with ghost vertices to connect multiple chains together.
+// @param vertices an array of vertices, these are copied
+// @param count the vertex count
+// @param prevVertex previous vertex from chain that connects to the start
+// @param nextVertex next vertex from chain that connects to the end
 func (chain *B2ChainShape) CreateChain(vertices []B2Vec2, count int, prevVertex B2Vec2, nextVertex B2Vec2) {
 	B2Assert(chain.M_vertices == nil && chain.M_count == 0)
 	B2Assert(count >= 2)

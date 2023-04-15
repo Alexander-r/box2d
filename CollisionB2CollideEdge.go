@@ -240,7 +240,7 @@ func B2ComputePolygonSeparation(polygonB B2TempPolygon, v1 B2Vec2, v2 B2Vec2) B2
 	return axis
 }
 
-/// Compute the collision manifold between an edge and a polygon.
+// Compute the collision manifold between an edge and a polygon.
 func B2CollideEdgeAndPolygon(manifold *B2Manifold, edgeA *B2EdgeShape, xfA B2Transform, polygonB *B2PolygonShape, xfB B2Transform) {
 	manifold.PointCount = 0
 
