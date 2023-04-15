@@ -50,6 +50,8 @@ func MakeB2RopeTuning() B2RopeTuning {
 	res.BendingModel = B2BendingModel.B2_pbdAngleBendingModel
 	res.Damping = 0.0
 	res.StretchStiffness = 1.0
+	res.StretchHertz = 1.0
+	res.StretchDamping = 0.0
 	res.BendStiffness = 0.5
 	res.BendHertz = 1.0
 	res.BendDamping = 0.0
