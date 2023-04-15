@@ -727,24 +727,8 @@ func B2Distance(output *B2DistanceOutput, cache *B2SimplexCache, input *B2Distan
 
 	// Apply radii if requested.
 	if input.UseRadii {
-		rA := proxyA.M_radius
-		rB := proxyB.M_radius
-
-		if output.Distance > rA+rB && output.Distance > B2_epsilon {
-			// Shapes are still no overlapped.
-			// Move the witness points to the outer surface.
-			output.Distance -= rA + rB
-			normal := B2Vec2Sub(output.PointB, output.PointA)
-			normal.Normalize()
-			output.PointA.OperatorPlusInplace(
-				B2Vec2MulScalar(rA, normal),
-			)
-			output.PointB.OperatorMinusInplace(
-				B2Vec2MulScalar(rB, normal),
-			)
-		} else {
-			// Shapes are overlapped when radii are considered.
-			// Move the witness points to the middle.
+		if output.Distance < B2_epsilon {
+			// Shapes are too close to safely compute normal
 			p := B2Vec2MulScalar(
 				0.5,
 				B2Vec2Add(output.PointA, output.PointB),
@@ -752,6 +736,20 @@ func B2Distance(output *B2DistanceOutput, cache *B2SimplexCache, input *B2Distan
 			output.PointA = p
 			output.PointB = p
 			output.Distance = 0.0
+		} else {
+			// Keep closest points on perimeter even if overlapped, this way
+			// the points move smoothly.
+			rA := proxyA.M_radius
+			rB := proxyB.M_radius
+			normal := B2Vec2Sub(output.PointB, output.PointA)
+			normal.Normalize()
+			output.Distance = math.Max(0.0, output.Distance-rA-rB)
+			output.PointA.OperatorPlusInplace(
+				B2Vec2MulScalar(rA, normal),
+			)
+			output.PointB.OperatorMinusInplace(
+				B2Vec2MulScalar(rB, normal),
+			)
 		}
 	}
 }
