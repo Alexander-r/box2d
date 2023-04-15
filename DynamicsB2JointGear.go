@@ -2,6 +2,7 @@ package box2d
 
 import (
 	"fmt"
+	"math"
 )
 
 // Gear joint definition. This definition requires two existing
@@ -69,8 +70,9 @@ type B2GearJoint struct {
 	M_referenceAngleA float64
 	M_referenceAngleB float64
 
-	M_constant float64
-	M_ratio    float64
+	M_constant  float64
+	M_ratio     float64
+	M_tolerance float64
 
 	M_impulse float64
 
@@ -152,6 +154,9 @@ func MakeB2GearJoint(def *B2GearJointDef) *B2GearJoint {
 		res.M_localAxisC.SetZero()
 
 		coordinateA = aA - aC - res.M_referenceAngleA
+
+		// position error is measured in radians
+		res.M_tolerance = B2_angularSlop
 	} else {
 		prismatic := def.Joint1.(*B2PrismaticJoint)
 		res.M_localAnchorC = prismatic.M_localAnchorA
@@ -162,6 +167,9 @@ func MakeB2GearJoint(def *B2GearJointDef) *B2GearJoint {
 		pC := res.M_localAnchorC
 		pA := B2RotVec2MulT(xfC.Q, B2Vec2Add(B2RotVec2Mul(xfA.Q, res.M_localAnchorA), B2Vec2Sub(xfA.P, xfC.P)))
 		coordinateA = B2Vec2Dot(B2Vec2Sub(pA, pC), res.M_localAxisC)
+
+		// position error is measured in meters
+		res.M_tolerance = B2_linearSlop
 	}
 
 	res.M_bodyD = res.M_joint2.GetBodyA()
@@ -356,8 +364,6 @@ func (joint *B2GearJoint) SolvePositionConstraints(data B2SolverData) bool {
 	qC := MakeB2RotFromAngle(aC)
 	qD := MakeB2RotFromAngle(aD)
 
-	linearError := 0.0
-
 	coordinateA := 0.0
 	coordinateB := 0.0
 
@@ -433,8 +439,11 @@ func (joint *B2GearJoint) SolvePositionConstraints(data B2SolverData) bool {
 	data.Positions[joint.M_indexD].C = cD
 	data.Positions[joint.M_indexD].A = aD
 
-	// TODO_ERIN not implemented
-	return linearError < B2_linearSlop
+	if math.Abs(C) < joint.M_tolerance {
+		return true
+	}
+
+	return false
 }
 
 func (joint B2GearJoint) GetAnchorA() B2Vec2 {

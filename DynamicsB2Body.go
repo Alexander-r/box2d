@@ -225,10 +225,12 @@ func (body B2Body) GetInertia() float64 {
 	return body.M_I + body.M_mass*B2Vec2Dot(body.M_sweep.LocalCenter, body.M_sweep.LocalCenter)
 }
 
-func (body B2Body) GetMassData(data *B2MassData) {
+func (body B2Body) GetMassData() B2MassData {
+	var data B2MassData
 	data.Mass = body.M_mass
 	data.I = body.M_I + body.M_mass*B2Vec2Dot(body.M_sweep.LocalCenter, body.M_sweep.LocalCenter)
 	data.Center = body.M_sweep.LocalCenter
+	return data
 }
 
 func (body B2Body) GetWorldPoint(localPoint B2Vec2) B2Vec2 {
@@ -680,6 +682,8 @@ func (body *B2Body) DestroyFixture(fixture *B2Fixture) {
 	// You tried to remove a shape that is not attached to this body.
 	B2Assert(found)
 
+	density := fixture.M_density
+
 	// Destroy any contacts associated with the fixture.
 	edge := body.M_contactList
 	for edge != nil {
@@ -708,7 +712,9 @@ func (body *B2Body) DestroyFixture(fixture *B2Fixture) {
 	body.M_fixtureCount--
 
 	// Reset the mass data.
-	body.ResetMassData()
+	if density > 0.0 {
+		body.ResetMassData()
+	}
 }
 
 func (body *B2Body) ResetMassData() {

@@ -157,8 +157,6 @@ func (joint *B2MouseJoint) InitVelocityConstraints(data B2SolverData) {
 
 	qB := MakeB2RotFromAngle(aB)
 
-	//mass := joint.M_bodyB.GetMass()
-
 	d := joint.M_damping
 	k := joint.M_stiffness
 
